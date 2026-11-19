@@ -9,10 +9,16 @@
 //   DM(8)  Thru: not 0 passes the input
 // The rest of the instance's 145 words is its state, 0 when the block is created. Beats are
 // counted in samples from the last one, so each click starts on its sample, and a new Time
-// puts the next beat a new beat after the last (at once if that has passed), as a DAW's grid.
+// puts the next beat a new beat after the last (at once if that has passed).
+// If the stock host stops calling us on bypass, a missing audio-block callback is
+// detected through EMUCLK. The next callback starts an accented downbeat rather than
+// resuming a stale fractional beat/bar. Whether the stock host skips the bypassed
+// primitive must still be verified on hardware (RAM-run only until verified).
 
 .equ C_SINCE,  20                       // samples since the last beat
-.equ C_MET,    26                       // not 0 after the first call: the first beat sounds at once
+.equ C_MET,    26                       // nonzero after the first call
+.equ C_CLK_LAST, 27                  // EMUCLK at the previous call, if any
+.equ C_GAP,    375000                  // > 2.5 x 150k cycles, to tolerate scheduling jitter
 .equ C_BEAT,   21                       // the beat in the bar, 0 the downbeat
 .equ C_ENV,    22                       // the burst's envelope
 .equ C_Y1,     23                       // the oscillator's last two outputs
@@ -103,10 +109,27 @@ CUSTOM_AMP_ENTRY:
     R9 = MAX_BAR;
     R14 = MIN(R14, R9);
 
-    R0 = DM(C_SINCE, I0);
+    R0 = EMUCLK;                        // elapsed cycles reveal a bypassed kernel (if its calls stop)
+    R1 = DM(C_CLK_LAST, I0);
+    DM(C_CLK_LAST, I0) = R0;
+    R0 = R0 - R1;                       // unsigned wrap-safe for gaps shorter than 2^31 cycles
     R1 = DM(C_MET, I0);
     R1 = PASS R1;
-    IF EQ R0 = PASS R12;
+    IF EQ JUMP c_restart;               // newly created instance
+    R1 = C_GAP;
+    COMP(R0, R1);
+    IF GT JUMP c_restart;               // multiple audio blocks missed
+    R0 = DM(C_SINCE, I0);
+    JUMP c_resume;
+c_restart:
+    R0 = PASS R12;                      // force an immediate click on the first sample
+    R1 = 0;
+    DM(C_BEAT, I0) = R1;                // downbeat at Accent = 4
+    DM(C_ENV, I0) = R1;                 // discard the previous click's tail
+    DM(C_Y1, I0) = R1;
+    DM(C_Y2, I0) = R1;
+    DM(C_COEF, I0) = R1;
+c_resume:
     R1 = 1;
     DM(C_MET, I0) = R1;
     R13 = DM(C_BEAT, I0);

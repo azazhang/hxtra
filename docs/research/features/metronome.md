@@ -19,3 +19,39 @@ A click-track block, Looper > Metronome, with a tempo-synced Time and its own DS
 - Image MD5 `dbe198d87566d373f6fc3a73bdc2f26c` (`HX_CLICK=1 HX_BPM=1 hxbuild --no-check`, RAM run). Result **[verified on unit]** (2026-11-07): works as built, first time.
 
 Tempo sync in a parameter map: [sharc/model-blobs.md](../sharc/model-blobs.md#tempo-sync-in-a-parameter-map-verified-offline).
+
+## Experimental resume phase reset (development branch)
+
+**Status: simulated only; the stock bypass execution path has not been tested on a device.**
+
+The custom SHARC metronome preserves its own beat/bar state in instance DM words
+20..26, while the TAP LED's M4 beat has an independent phase. In particular,
+the stock metronome kernel has no bypass-transition handler.
+
+An experimental kernel change records the 32-bit EMUCLK value in free instance
+word 27. After an interval exceeding 375,000 core cycles (2.5 normal 16-sample
+block periods at 450 MHz / 48 kHz), the next processing call resets the click
+envelope and oscillator, puts the bar position on beat 1, and emits the accented
+downbeat immediately. Normal uninterrupted calls retain the old sample-accurate
+count and tempo-change behavior. The interval comparison is modulo 2^32 and
+assumes individual gaps shorter than half a clock wrap (~4.77 seconds); ordinary
+long bypasses will generally also trigger because their modulo gap is above
+the threshold, but a specially timed long bypass could fail.
+
+**Critical hardware condition:** this only detects bypass if Line 6's graph
+actually *stops calling* this primitive while the block is bypassed. If the
+primitive continues to run and its output is merely discarded, no gap occurs,
+and the change does nothing on reactivation. Verify that first with a RAM-run
+probe, preferably by counting process calls during block on/off.
+
+The same code does **not** synchronize clicks with the M4 TAP LED. A true TAP
+phase reset requires a reliable ARM-to-DSP event, a policy for downbeat placement
+(when Accent is 4), and tests of MIDI clock, tempo changes, snapshot changes,
+ordinary bypass, preset reloads and processing overload. The known DSP-to-M4
+frame-tail transport is insufficient on its own for ARM-to-DSP commands.
+
+Validation: `pytest tests/test_click.py -m 'not firmware'` includes simulated
+audio-kernel execution, reset after a missing callback, an uninterrupted
+callback case, and 32-bit EMUCLK wrap. Full firmware builds require the user's
+own official Line 6 3.80 firmware; only RAM-run on a device for the first
+hardware validation.

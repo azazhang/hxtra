@@ -96,6 +96,41 @@ def test_a_beat_every_time_seconds_from_the_first_sample(time):
     assert onsets(out) == [0, beat, 2 * beat, 3 * beat]
 
 
+def test_resume_after_missing_audio_callback_starts_with_accented_beat_one():
+    # Simulate a metronome that has already advanced partway through its bar.
+    c = Click(time=0.1, accent=4)
+    c.run(2 * 4800 + 1024)
+    assert c.sim.rd(I0 + 21) == 3              # first accent plus two ordinary beats
+    # The stock firmware may stop calling a bypassed effect. Several missed 16-sample
+    # callback makes the EMUCLK delta exceed C_GAP (375k cycles).
+    c.sim.cycles += 3 * 150000
+    first = c.call()
+    assert c.sim.rd(I0 + 21) == 1              # downbeat increments the bar counter to 1
+    assert any(abs(y) > 1e-4 for y in first[:16])
+    assert freq(first + c.run(480)) == pytest.approx(2000, rel=0.02)
+
+
+def test_resume_detection_survives_emuclk_32_bit_wrap():
+    c = Click(time=0.1, accent=4)
+    c.run(2 * 4800 + 1024)
+    # Set the hardware-clock wrap up while active, then skip several callbacks.
+    c.sim.cycles = (1 << 32) - 100000
+    c.call()
+    c.sim.cycles += 3 * 150000
+    first = c.call()
+    assert c.sim.rd(I0 + 21) == 1
+    assert freq(first + c.run(480)) == pytest.approx(2000, rel=0.02)
+
+
+def test_regular_audio_callback_cadence_preserves_bar_position():
+    c = Click(time=0.1, accent=4)
+    c.run(2 * 4800 + 1024)
+    beat = c.sim.rd(I0 + 21)
+    c.sim.cycles += 150000                    # one real-time block period, no missed callback
+    c.call()
+    assert c.sim.rd(I0 + 21) == beat
+
+
 def test_a_shorter_beat_applies_at_once():
     c = Click(time=1.0)
     out = c.run(FS // 2)                         # half a second into a 1 s beat

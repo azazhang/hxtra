@@ -25,7 +25,7 @@ import os
 import struct
 
 M32 = 0xFFFFFFFF
-U_PC, U_PCSTK, U_CURLCNTR, U_LCNTR, U_TCOUNT = 0x63, 0x64, 0x67, 0x68, 0x6F
+U_PC, U_PCSTK, U_CURLCNTR, U_LCNTR, U_EMUCLK, U_TCOUNT = 0x63, 0x64, 0x67, 0x68, 0x69, 0x6F
 U_USTAT1, U_USTAT2, U_MODE1, U_MODE2, U_FLAGS, U_ASTATX, U_ASTATY = 0x70, 0x71, 0x72, 0x74, 0x75, 0x76, 0x77
 U_USTAT3, U_USTAT4 = 0x7E, 0x7F
 PEYEN, BDCST9, BDCST1 = 1 << 21, 1 << 22, 1 << 23
@@ -192,6 +192,8 @@ class Sim:
         self.tf = bool(v & (1 << 18))
 
     def get(self, code):
+        if code == U_EMUCLK:             # hardware clock; callers may advance cycles between callbacks
+            return self.cycles & M32
         if code == U_PC:
             return self.pc
         if code == U_CURLCNTR:

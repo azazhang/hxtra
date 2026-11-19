@@ -33,10 +33,9 @@ word 27. After an interval exceeding 375,000 core cycles (2.5 normal 16-sample
 block periods at 450 MHz / 48 kHz), the next processing call resets the click
 envelope and oscillator, puts the bar position on beat 1, and emits the accented
 downbeat immediately. Normal uninterrupted calls retain the old sample-accurate
-count and tempo-change behavior. The interval comparison is modulo 2^32 and
-assumes individual gaps shorter than half a clock wrap (~4.77 seconds); ordinary
-long bypasses will generally also trigger because their modulo gap is above
-the threshold, but a specially timed long bypass could fail.
+count and tempo-change behavior. The interval comparison is modulo 2^32 and treats the high bit as an
+unsigned long-gap flag. Gaps exceeding one full clock wrap (~9.54 seconds at
+450 MHz) alias modulo 2^32; a specially timed long bypass could fail.
 
 **Critical hardware condition:** this only detects bypass if Line 6's graph
 actually *stops calling* this primitive while the block is bypassed. If the

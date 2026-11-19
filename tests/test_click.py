@@ -122,6 +122,17 @@ def test_resume_detection_survives_emuclk_32_bit_wrap():
     assert freq(first + c.run(480)) == pytest.approx(2000, rel=0.02)
 
 
+def test_long_bypass_elapsed_cycles_above_signed_31_bit_range():
+    # A five-second pause is > 2**31 SHARC cycles at 450 MHz.
+    # Signed COMP alone incorrectly interprets that duration as negative.
+    c = Click(time=0.1, accent=4)
+    c.run(2 * 4800 + 1024)
+    c.sim.cycles += 5 * 450000000
+    first = c.call()
+    assert c.sim.rd(I0 + 21) == 1
+    assert freq(first + c.run(480)) == pytest.approx(2000, rel=0.02)
+
+
 def test_regular_audio_callback_cadence_preserves_bar_position():
     c = Click(time=0.1, accent=4)
     c.run(2 * 4800 + 1024)

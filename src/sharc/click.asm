@@ -112,10 +112,12 @@ CUSTOM_AMP_ENTRY:
     R0 = EMUCLK;                        // elapsed cycles reveal a bypassed kernel (if its calls stop)
     R1 = DM(C_CLK_LAST, I0);
     DM(C_CLK_LAST, I0) = R0;
-    R0 = R0 - R1;                       // unsigned wrap-safe for gaps shorter than 2^31 cycles
+    R0 = R0 - R1;                       // unsigned elapsed cycles modulo 2^32
     R1 = DM(C_MET, I0);
     R1 = PASS R1;
     IF EQ JUMP c_restart;               // newly created instance
+    BTST R0 BY 31;                      // elapsed cycles are a 32-bit unsigned count
+    IF NOT SZ JUMP c_restart;           // BTST sets SZ (not TF) on this SHARC
     R1 = C_GAP;
     COMP(R0, R1);
     IF GT JUMP c_restart;               // multiple audio blocks missed

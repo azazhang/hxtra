@@ -1,32 +1,22 @@
-"""Experimental 41C TAP/metronome bypass phase signalling (M4 to SHARC).
+"""METRO-TAPSYNC-R02A-M4EDGE: bounded TAP/bypass M4 diagnostic, no DSP calls.
 
-Proven carrier: usbInGain0_1 app parameter sent through PARAM_SEND, decoded
-on SHARC by a Level gain control wrapper. This diagnostic targets bypass of
-41C path A slot 7 (grid position 8). Do not ship as general preset support.
+HX_METRO_EDGE_DIAG=1. Feature stores only integer counters from realtime
+callbacks; a separate read-only command (USB editor 0x50) returns the counters.
+It deliberately does not claim to synchronize SHARC audio in this revision.
 """
-import patch_menu as pm
+import usb_commands
 
-FLAG = 'HX_METRO_PHASE'
+FLAG = 'HX_METRO_EDGE_DIAG'
 MENU = False
 WEB = False
-CONFLICTS = ('tap_command', 'usb_monitor')
 
-OUTPUT = 0x28df5760
-OUTPUT_STOCK = bytes.fromhex('f0b5 85b0')
-BEAT_ON_CALL = 0x28d9be92
-FS_STATE = 0x28d9607c
-BYPASS = 0x28e045a0
-BYPASS_STOCK = bytes.fromhex('2de9 f041')
+BEAT_ON_CALL, FS_STATE = 0x28d9be92, 0x28d9607c
+BYPASS, BYPASS_STOCK = 0x28e045a0, bytes.fromhex('2de9 f041')
+REGISTER_ALL_CALL, REGISTER_ALL = 0x28d96adc, 0x28e1661c
 
 
 def apply(p):
-    raise SystemExit("HX_METRO_PHASE quarantined: M4 UI freeze on BPM adjustment."
-                     " Do not enable until LED callback's FPU/locking calls are redesigned.")
-    m = p.module('src/m4/metronome_phase.s')
-    h = p.own_entry(OUTPUT, OUTPUT_STOCK, 'M4 app output sender; save valid app context')
-    a = pm.Asm(p.next())
-    a.movw_movt(12, h.stock | 1)
-    a.bw(m['mp_output'])
-    h.to(p.add(a.bytes()))
-    p.own_call(BEAT_ON_CALL, FS_STATE, 'stock TAP LED ON beat', m['mp_beat'])
+    m = p.module('src/m4/metronome_phase.s', inc={'usb.inc': usb_commands.inc('metronome_phase')})
+    p.own_call(BEAT_ON_CALL, FS_STATE, 'R02A TAP LED on-beat event (increment only)', m['mp_beat'])
     p.chain_entry(BYPASS, BYPASS_STOCK, after=m['mp_bypass'])
+    p.chain_bl(REGISTER_ALL_CALL, REGISTER_ALL, after=m['mp_register'])

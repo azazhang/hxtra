@@ -1,11 +1,12 @@
-"""METRO-TAPSYNC-R02B1E-EVENT-ECHO: SHARC candidate-RX probe + GR TX echo."""
+"""METRO-TAPSYNC-R02B2-AUDIO-PHASE: SHARC four-word verified M4 DMA event echo."""
 import importlib
 import os
 
 
 def test_opt_in_sharc_echoes_four_adjacent_event_words(monkeypatch):
-    monkeypatch.setenv('HX_METRO_EVENT_ECHO','1')
+    monkeypatch.setenv('HX_METRO_SPI_PHASE','1')
     monkeypatch.delenv('HX_METRO_SPI_CANARY',raising=False)
+    monkeypatch.delenv('HX_METRO_EVENT_ECHO',raising=False)
     import test_gr as gr
     sim, sym = gr.probe(span=256)
     # The R02B1 hardware-verified frame location carries four adjacent words.
@@ -26,8 +27,9 @@ def test_opt_in_sharc_echoes_four_adjacent_event_words(monkeypatch):
 
 
 def test_default_gr_frame_probe_does_not_echo_candidate_words(monkeypatch):
-    monkeypatch.delenv('HX_METRO_EVENT_ECHO',raising=False)
+    monkeypatch.delenv('HX_METRO_SPI_PHASE',raising=False)
     monkeypatch.delenv('HX_METRO_SPI_CANARY',raising=False)
+    monkeypatch.delenv('HX_METRO_EVENT_ECHO',raising=False)
     import test_gr as gr
     sim,sym=gr.probe(span=256)
     sim.wr(0xc3da6,0x4D543242)

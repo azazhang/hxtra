@@ -1,13 +1,13 @@
-"""METRO-TAPSYNC-R02B1E-EVENT-ECHO: dynamic M4-to-SHARC event probe.
+"""METRO-TAPSYNC-R02B2-AUDIO-PHASE: M4-to-SHARC event driven click.
 
-HX_METRO_EVENT_ECHO=1. R02A integer-only event callbacks retained.
+HX_METRO_SPI_PHASE=1. R02A integer-only event callbacks retained.
 A hooked M4 TX frame callback writes a canary and two event counters to
 reserved tail words of small SPI frames. The SHARC mirrors four words
-back, including the integrity check. No audio phase changes at this stage.
+back, including the integrity check. The SHARC click kernel uses these events to phase-align quarter-note clicks.
 """
 import usb_commands
 
-FLAG = 'HX_METRO_EVENT_ECHO'
+FLAG = 'HX_METRO_SPI_PHASE'
 MENU = False
 WEB = False
 

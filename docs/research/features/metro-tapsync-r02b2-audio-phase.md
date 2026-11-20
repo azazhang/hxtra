@@ -1,0 +1,51 @@
+# METRO-TAPSYNC-R02B2-AUDIO-PHASE
+
+**Purpose:** first HX Stomp RAM-only *audible* synchronization implementation, built on R02B1E's independently hardware-verified M4→SHARC event counts. Distinct from the quarantined R01 synchronous M4-param experiment. The R02B2 `R02B2-AUDIO-PHASE` label identifies the firmware, WebUSB page, source branch, simulator tests, and hardware evidence.
+
+## Confirmed dependency
+
+R02B1E hardware QA tag `metro-tapsync-r02b1e-hwqa-20261120` proves that TAP/LED-on event counter and metronome re-enable counter change in M4 and appear on SHARC in the M4 SPI TX ring at `DM 0xC3DA7` and `0xC3DA8`. The fixed marker at `DM 0xC3DA6` and complemented-XOR check at `DM 0xC3DA9` were confirmed in the same firmware. 60 independent readings matched event counts exactly, plus 19 live control samples matched or lagged by one count. Four bypass/re-enable cycles incremented exactly once, without M4 freeze; zero firmware-reported checksum failures. One invalid host read among an earlier 10 samples had an incorrect marker; root cause not confirmed, likely a transient diagnostic snapshot, and must not be ignored in result interpretation.
+
+## Audio kernel logic
+
+- `src/sharc/click_spi_phase.asm` contains the original HXtra Metronome primitive with a SPI-event phase controller. Its source is chosen only when `HX_METRO_SPI_PHASE=1`; all other builds retain the prior click source (`src/sharc/click.asm`).
+- Per 16-sample audio callback, load the four SHARC SPI words and verify marker `0x4D543242` and complemented-XOR integrity. A torn/invalid observation is ignored. No M4 API is invoked from the SHARC kernel.
+- On first valid frame and instance creation, seed the last two counters and wait for the **next** TAP LED-on edge to begin the click. Old events before this instance must not cause a click.
+- Each subsequent TAP count change triggers one click on the first sample of the current SHARC audio block; the local sample counter is reset. The original Accent counter still cycles with the chosen number of beats per bar. The intended audible edge displacement includes asynchronous SPI transfer and at most one audio block of processing latency; an actual millisecond offset has **not yet been measured on hardware**.
+- On metronome re-enable, store the current TAP count, reset the accent/oscillator phase, and wait for the next TAP LED edge. This produces an accented downbeat on the metrical grid, avoiding a second offbeat click shortly before the next LED flash. It intentionally does not generate an immediate offbeat sound upon re-enable.
+- While valid TAP edges arrive regularly, the M4's TAP events own beat timing; the local oscillator is suppressed to avoid double clicks. If no new TAP pulse is seen for two nominal Time intervals, the kernel falls back to the previous sample-counting behavior so the metronome can remain audible if TAP events cease.
+- **Scope of this first hardware version:** Metronome Time synced to a **quarter-note** on preset 41C. At other subdivisions (eighths, sixteenths, dotted settings, etc.) the M4 quarter-note LED edge cadence is not the full desired subdivision click rate; their proper subdivision scheduling remains to be designed. Do not report full note-subdivision synchronization from this version.
+- The callback and SPI ring tap remain bounded integer-only, with no VFP instructions or control/settings mutex calls. The R02B1E M4 event-producer path is otherwise unchanged, except the firmware diagnostic sentinel `0x32423252` identifying R02B2.
+
+## Simulated acceptance before hardware
+
+1. Verify actual SHARC binary's 16-sample callback register/stack integrity via `test_click.Click` simulation; first valid instance is silent until new TAP; accented 2 kHz downbeat, 1 kHz successive beats, and 4-count cycle.
+2. Check constant/duplicate M4 edge counts never retrigger, and taps at exactly 4,800-sample sample intervals produce exactly one click per pulse, with tempo shortening driven by external events.
+3. Check re-enabling after stale TAP counts resets bar phase and waits for next LED edge; invalid complemented-XOR frame cannot trigger a false beat.
+4. Check no SPI at all preserves original local audible startup, and missing M4 TAP pulses cause bounded fallback. Other note subdivisions explicitly unvalidated.
+5. Run M4 Unicorn real-instruction TX/RX tests, SHARC GR echo tests, host parser tests and cross-processor integration, plus HXtra-wide regression tests. Compare all 792 model and parameter schemas with exact installed HXtra v1.2.1 donor. Require a nine-region RAM-only overlay plan with verified hashes.
+
+## Required live observations after user-initiated R02B2 RAM boot
+
+Check 41C still contains eight blocks, controls respond, USB command 0x50 reports R02B2 version, and receive-frame counts/echo checks remain valid. With Metronome Time = 1/4 and Accent = 4, enable the block and record/observe click onset and TAP LED flash over multiple bars at 100 and 150 BPM. Verify clicks occur once per TAP beat (no double or skipped clicks), high-pitched accent every fourth click, and re-enable resets the accent on the **next TAP** with no offbeat click. Exercise changing BPM during playback and parameter knob turns, verifying no M4 UI freeze. Restore 41C edit buffer to the pre-RAM backup without saving. If the Mac mini's CoreAudio recorder can capture the metronome on HX Stomp USB channels, use sample-level onset analysis; do not infer a measured audio-to-LED offset from independent clocks without a time-synchronization anchor.
+
+**Status:** code and off-device tests are separate from any actual R02B2 hardware run. Preserve user-visible run evidence under `METRO-TAPSYNC-R02B2-AUDIO-PHASE/HWQA*` and commit with a distinct annotated hardware tag only after a successful run.
+
+## R02B2 offline firmware integrity and staged image (Nov 20, 2026)
+
+- Built with `HX_NAM_SLOTS=1 HX_CLICK=1 HX_BPM=1 HX_GR=1 HX_FX_GATE=1 HX_GATE_SC=1 HX_USB_INPUT=1 HX_SCREEN_MIRROR=1 HX_METRO_SPI_PHASE=1` and stock HX Stomp 3.80 HXF `~/Downloads/HX_Stomp_v3.80.0_0x103966115.hxf`.
+- Source image `build/HXStomp380_HXtra121_METRO-TAPSYNC-R02B2-AUDIO-PHASE_RAM.hxf`, **45,847,046 bytes**, SHA-256 **`a9151038070de6425f3a94095759891d0a8d989c6359dde466227a41b2cb6bc0`**.
+- Exact installed-donor HXtra v1.2.1 comparison: **792/792 model schemas identical**, including all eight block model IDs of 41C. No model or exposed parameter layout changes.
+- RAM overlay plan: nine upload regions, 74 redirected sectors in ten runs, seven donor verification pieces. **All device application writes are RAM only**. Plan SHA-256 **`9e5438770eb9e8f5db5ca74bc7dc3c7165fe96e90e516dbf15285e15bcc4a5c0`**. As with prior successful RAM runs, loader eMMC status `0x10b` may prevent on-device donor reads; this is shown by the existing page.
+- Both image and manifest SHA-256 verified equal after copy to the Mac mini. WebUSB entry page `http://localhost:8765/METRO-TAPSYNC-R02B2-AUDIO-PHASE/` and its manifest endpoint returned HTTP 200. The pedal remained on R02B1E RAM firmware; this staging step made no firmware change to the unit.
+- The core SHARC click-kernel code has **227 PM instructions** versus **159** in the original, and the build flag changes which kernel `patch_click.click_source()` selects. Tests confirm that builds without the new flag remain byte-identical to the original kernel.
+- Focused R02B2 test suite: M4 Thumb binary frame hooks, four-word SHARC event-echo binary, host checksum parser, M4→SHARC→M4 dynamic round trip, and **10** new SHARC audio-phase tests covering startup, accented downbeat, duplicate events, re-enable reset, invalid SPI, missing-TAP fallback, real 16-sample click onsets and tempo shortening.
+- Broader regression run includes the original click tests, both explicit base and opt-in kernels, HXtra model/preset, GR, metronome and RAM-loader tests. The loader source-rebuild fixture is deselected because the local ARM GCC lacks `nano.specs`; the actual working upstream loader .dfu is retained unchanged. Final suite result is appended below after completion.
+
+### Final offline regression and hardware-test staging
+
+- **Full regression: 315 tests passed, 1 intentionally deselected** in 146.52 seconds. The omitted test `tests/test_ramrun.py::test_built_files_match_source` requires newlib's `nano.specs` not installed with the local ARM bare-metal GCC. The bundled known-good `.dfu` RAM loader is retained unmodified.
+- The first full run had two failed assertions in `tests/test_click.py` because its test helper assembled the original 159-word kernel while this branch deliberately selected a new 227-word variant. Updated the test helper to use `patch_click.click_source(for_size=True)` (the exact build-selected kernel). Both targeted inherited tests then passed 2/2, followed by the **entire 315/315 suite passing** under `HX_METRO_SPI_PHASE=1`.
+- Original kernel source SHA-256 `072afb7641748b97cd2c5820e8b85a3da165fa0ab579cc479d6d44bf33e77c4f`, which is still selected byte-for-byte when the opt-in flag is absent. R02B2 `click_spi_phase.asm` source SHA-256 `5e09b2ac1983c243aa756e6bf8d9a6103eee54bec88511beeb227b2b54021d72` at verification. Both tested kernel variants preserve the caller register snapshot and the original model schema.
+- `tools/metro_tapsync_r02b2_hwqa.py` is staged on the Mac mini. It tests four 41C bypass/re-enable cycles (exact increments and DSP echo), six Time-knob changes and TAP changes, compares the final live edit buffer to the pre-RAM backup, and restores bypass. Optional `--record-audio` uses the already compiled Mac mini `build/record_mac` to save a seven-second eight-channel HX Stomp USB WAV while Metronome is enabled, recording recorder failures as evidence rather than silently claiming an acoustic measurement. No R02B2 hardware test has been executed yet.
+- Git revision for this stage will be tagged as `metro-tapsync-r02b2-audio-phase-20261120` after committing the implementation and this record. The RAM firmware and the staged WebUSB assets are not included as tracked source files; the exact SHA-256 hashes above identify them.

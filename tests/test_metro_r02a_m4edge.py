@@ -122,7 +122,7 @@ def test_usb_command_reports_binary_snapshot(assembled):
     assert m.sent[:3] == (0x20002000, 0x1234, 0)
     assert m.sent[3][:2] == b'\xc4\x30'
     values=struct.unpack('<12I',m.sent[3][2:])
-    assert values[:2] == (3, 1) and values[-1]==0x31453142
+    assert values[:2] == (3, 1) and values[-1]==0x32423252
 
 
 def test_there_are_no_fpu_or_lock_api_calls_in_realtime_hooks(assembled):

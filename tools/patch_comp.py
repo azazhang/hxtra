@@ -336,7 +336,7 @@ def e0_set_param_counts(e0, name_idx, old, new):
 
 def dsp_asm(dm, pm):
     """frame_probe.asm with its data at dm and its code at pm."""
-    variant = ASM_R02B1 if os.environ.get('HX_METRO_SPI_CANARY') or os.environ.get('HX_METRO_EVENT_ECHO') else ASM
+    variant = ASM_R02B1 if os.environ.get('HX_METRO_SPI_CANARY') or os.environ.get('HX_METRO_EVENT_ECHO') or os.environ.get('HX_METRO_SPI_PHASE') else ASM
     return open(variant).read().replace('GR_DM_BASE', f'{dm:#x}').replace('GR_PM_BASE', f'{pm:#x}')
 
 

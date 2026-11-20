@@ -21,7 +21,9 @@ FS = 48000
 
 
 def assemble(base=0xE5000):
-    return sasm.assemble(open(patch_click.ASM).read().replace('KIT_PM_BASE', f'{base:#x}'), 'click.asm')
+    # Compare the exact selected SHARC metronome kernel, including opt-in
+    # R02B2 TAP-phase audio builds. Default builds remain the original kernel.
+    return sasm.assemble(patch_click.click_source(for_size=True).replace('KIT_PM_BASE', f'{base:#x}'), 'click.asm')
 
 
 N_CODE = len(assemble()[0][0].words)

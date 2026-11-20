@@ -33,9 +33,12 @@ import l6ia
 ASM = os.path.join(SCRIPT_DIR, '..', 'src', 'sharc', 'click.asm')
 
 PHASE_ASM = os.path.join(SCRIPT_DIR, '..', 'src', 'sharc', 'click_phase.asm')
+SPI_PHASE_ASM = os.path.join(SCRIPT_DIR, '..', 'src', 'sharc', 'click_spi_phase.asm')
 
 
 def click_source(for_size=False):
+    if os.environ.get('HX_METRO_SPI_PHASE'):
+        return open(SPI_PHASE_ASM).read()
     if not os.environ.get('HX_METRO_PHASE'):
         return open(ASM).read()
     import patch_metro_phase

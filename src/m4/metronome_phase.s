@@ -1,8 +1,8 @@
-@ METRO-TAPSYNC-R02B1E-EVENT-ECHO (2026-11-20): end-to-end event counter proof.
+@ METRO-TAPSYNC-R02B2-AUDIO-PHASE (2026-11-20): TAP-anchored SHARC click.
 @ R01 froze M4 controls on BPM adjustment because the timing callback called
 @ locking app-param/settings functions and executed VFP instructions.
 @
-@ R02B1 beat and bypass hooks still execute only integer loads/stores;
+@ R02B2 beat and bypass hooks retain bounded integer-only event capture;
 @ the read-only USB diagnostics run separately on HX Edit's normal UI service.
 @ Extra hooks stamp a short canary and the current event counters in unused
 @ tail words of small SPI TX frames and read probe values echoed by the SHARC.
@@ -106,7 +106,7 @@ mp_counters:
     .word 0                     @ DSP RX word223: SHARC-observed integrity checksum
     .word 0                     @ confirmed valid echoed event frames
     .word 0                     @ echoed marker-present frames failing checksum
-    .word 0x31453142            @ LE "B1E1": exact firmware signature
+    .word 0x32423252            @ LE "R2B2": exact firmware signature
 @ Before the stock DSP->M4 receive callback. SHARC mirrors TX words 240..243
 @ to its return-frame words 220..223. Snapshot four echoed values and check
 @ the marker / 32-bit XOR complement without any locks or runtime API calls.

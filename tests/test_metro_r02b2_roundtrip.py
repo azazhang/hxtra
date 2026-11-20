@@ -1,9 +1,9 @@
-"""METRO-TAPSYNC-R02B1E-EVENT-ECHO: actual M4 binary -> simulated SPI -> SHARC binary -> M4 binary -> host."""
+"""METRO-TAPSYNC-R02B2-AUDIO-PHASE: actual M4 binary -> simulated SPI -> SHARC binary -> M4 binary -> host."""
 import struct
 import pytest
 import test_gr as gr
-import test_metro_r02b1e_spi_canary as mt
-import metro_tapsync_r02b1e_probe as probe
+import test_metro_r02b2_spi_frame as mt
+import metro_tapsync_r02b2_probe as probe
 from unicorn.arm_const import UC_ARM_REG_R1,UC_ARM_REG_R2
 
 
@@ -40,7 +40,7 @@ def test_live_m4_instructions_sharc_assembly_and_usb_parser_preserve_two_dynamic
         import os,m4asm,usb_commands
         open(os.path.join(d,"usb.inc"),"w").write(usb_commands.inc("metronome_phase"))
         asm=m4asm.assemble_module("src/m4/metronome_phase.s",include=(d,))
-    monkeypatch.setenv('HX_METRO_EVENT_ECHO','1')
+    monkeypatch.setenv('HX_METRO_SPI_PHASE','1')
     monkeypatch.delenv('HX_METRO_SPI_CANARY',raising=False)
     m=mt.Machine(asm)
     sim,sym=gr.probe(span=256)

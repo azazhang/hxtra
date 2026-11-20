@@ -20,7 +20,8 @@ progress {width:100%;height:12px; margin:14px 0 6px}
 </style>
 </head>
 <body>
-<h1>METRO-LEDSYNC-R02C-DONOR-EGRESS</h1>
+<h1>METRO-LEDSYNC-R02C-DONOR-EGRESS — FAILED HARDWARE STARTUP</h1>
+<p class="warn" id="R02C_STARTUP_FAILURE"><strong>HALTED — DO NOT RUN R02C AGAIN.</strong> The first physical test on November 20, 2026 froze the HX Stomp on startup; USB enumerated but its editor did not respond to SYN. The original installed HXtra v1.2.1 is restored by a power cycle. See the <a href="../METRO-DONOR-V121-UNCHANGED-RAM-CONTROL/">unmodified-donor RAM startup control</a> for isolated follow-up testing. The original R02C source remains available for forensic analysis.</p>
 <p>R02C is the donor-preserving visible-TAP LED synchronization experiment. Its source is the exact installed HXtra v1.2.1 HXF (MD5 93969635834cd6050dec7f137df1e4b9). M4 captures the final FS3 TAP ring's OFF-to-ON command after HXtra LED color/visibility filtering, including blink-mode transitions during BPM changes. SHARC begins a click at the next audio block after this event. First visible flash after Metronome re-enable resets the accented downbeat.</p>
 <p><strong>Donor preservation:</strong> All 13 firmware entries beyond M4 application and SHARC loader are byte-for-byte identical to the installed HXtra v1.2.1. M4 changes are limited to five independently checked hook sites and appended diagnostic code. Original SHARC model and USB Monitor/Gain Reduction/NAM code remains intact; a single instruction in the original 142-word click kernel branches to a 15-word shim in unused PM memory. Four equivalent contiguous memory-initialization records were merged without changing final SHARC data, leaving 4 bytes under the 512 KiB partition limit. No existing HXtra feature was disabled.</p>
 <p><strong>Expected scope:</strong> Preset 41C, FS3 assigned TAP, Metronome Time 1/4, Accent 4. The LED must visibly flash for external phase-lock. If FS3 is not TAP or TAP visibility is turned Off, the original HXtra local metronome timing is retained. USB diagnostics command 0x50 measures LED *output commands*; actual light emission and audio acoustic alignment still require a hardware observation.</p>
@@ -35,6 +36,7 @@ progress {width:100%;height:12px; margin:14px 0 6px}
 <script>
 'use strict';
 const el = id=>document.getElementById(id);
+const R02C_FAILED=true; // startup failure observed: disable WebUSB execution
 let ready=null, running=false;
 const log=s=>{el('log').textContent += s; el('log').scrollTop=el('log').scrollHeight;};
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -50,7 +52,7 @@ async function preload(){
  const total=regions.reduce((n,r)=>n+r.bytes.length,0);
  ready={plan:{regions,checks:manifest.checks},loader};
  show('Ready',`WebUSB available; ${regions.length} regions (${(total/1048576).toFixed(2)} MiB), ${manifest.checks.length} eMMC checks; RAM-only writes.`);
- el('run').disabled=false;
+ el('run').disabled=R02C_FAILED;
  log('Local RAM plan verified: 9 regions, 1 eMMC comparison, writes=ram.\n');
  log('METRO-LEDSYNC-R02C-DONOR-EGRESS | HXtra WebUSB | read-only final visible LED output event counters\n');
 }
@@ -61,6 +63,7 @@ function ask(stage){
 }
 function unask(){el('next').style.display='none';el('next').onclick=null;}
 el('run').onclick=async()=>{
+ if(R02C_FAILED) { show('DISABLED','R02C froze on startup. Do not run it again.'); return; }
  if(!ready||running)return;
  running=true;el('run').disabled=true;el('log').textContent='';el('progress').value=0;show('Starting RAM test','Select the HX Stomp from Chrome’s USB device chooser.');
  try{
@@ -73,7 +76,7 @@ el('run').onclick=async()=>{
  }catch(e){
   show('RAM run stopped',(e?.code?e.code+': ':'')+(e?.message||String(e)));
   log('\nERROR: '+(e?.code?e.code+': ':'')+(e?.stack||e?.message||String(e))+'\n');
- }finally{running=false;el('run').disabled=false;unask();}
+ }finally{running=false;el('run').disabled=R02C_FAILED;unask();}
 };
 el('save').onclick=()=>{const blob=new Blob([`METRO-LEDSYNC-R02C-DONOR-EGRESS WebUSB RAM diagnostic\n${new Date().toISOString()}\n${el('status').innerText}\n\n${el('log').textContent}`],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='METRO-LEDSYNC-R02C-DONOR-EGRESS-WebUSB.log';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 preload().catch(e=>{show('Setup failed',e.message);log('ERROR: '+e.stack+'\n');});

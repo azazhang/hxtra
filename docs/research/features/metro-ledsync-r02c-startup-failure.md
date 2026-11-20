@@ -1,0 +1,29 @@
+# METRO-LEDSYNC-R02C-HWFAIL01 — frozen application startup, November 20, 2026
+
+## Observed outcome
+
+The user reported R02C froze on startup immediately following its first attempted RAM-only hardware load: **"freezed on startup"**. On the Mac mini, a read-only USB probe detected `HX Stomp` enumerated as a Line 6 USB device; invoking `.venv/bin/python tools/hx_ctl.py --timeout 2 status` returned `error: no SYN reply from the device within 2.0 s`. The browser's local HTTP server log shows it served R02C's nine RAM transfer regions. The full browser transport-execution log has **not** been obtained, so completion of the RAM execution stage, the exact frozen screen, and availability of audio passthrough remain unverified. USB enumeration alone does not conclusively locate the fault inside the M4, but the failed editor handshake and user-observed freeze establish a **hardware startup failure**.
+
+**Do not run R02C again as a normal test candidate.** Its WebUSB runner (`web/experiments/metro-ledsync-r02c/index.html`) is disabled with an explicit failure notice. Since the failed firmware is RAM-only, a physical power cycle should restore the user's original installed HXtra v1.2.1; successful restoration after the user's most recent attempt has not yet been separately observed. This failure supersedes the positive offline claims of tag `metro-ledsync-r02c-donor-egress-20261120`.
+
+## Source and forensic observations since report
+
+- Original R02C artifacts were built from the exact donor HXF SHA256 `96ac133e094c75f2701226fc7cf3fca4c04b19b91aa34785e646d919979b88c0`, MD5 `93969635834cd6050dec7f137df1e4b9`. R02C staged HXF SHA256 `c718cdb42429cc2b68411d80ede50fb341d8588db3e92bd35cf5c0c180d57126`; its 13 other L6IA entries were byte-identical to donor, Entry0 five whitelisted M4 hook sites and appended module, Entry2 SHARC click trampoline and bootstream changes. The L6IA archive checksums were previously verified; checksums and simulations did not detect startup incompatibility.
+- The original M4 LED sender and the modified R02C M4 LED sender were executed *in actual extracted code* under Unicorn via `tests/test_metro_r02c_led_fullpath_startup.py`. For FS3 TAP, visible and dark LED colors, another footswitch assignment, and TAP LED Off, both returned to the same stop address, restored the same stack pointer, and reached the original downstream LED hardware send routine. This excludes one simple stack/trampoline mismatch **for those simulated contexts**; real startup ordering, interrupts, mutex ownership, hardware memory effects, and the SHARC bootstrap are not reproduced.
+- `src/m4/gr_meter.s` independently supports that GR's receive callback accepts the SPI RX frame in r1. The donor RX callback already points to GR's code and the R02C event probe's register assumption agrees with this source. Other possible effects remain untested.
+- The SHARC LDR bootstream is almost full: R02C entry2 length `524284` of `524288` available bytes. Its exact installed kernel had 142 instructions and one was replaced with a branch into a previously unused 15-instruction SHARC PM shim. Four short contiguous data-load records were merged into an equivalent 32-word record, saving 36 bytes. Complete final initialized DM values are identical offline, but hardware bootloader's record ordering, prefetch/partition boundary effects, and DMA execution remain **unverified**. This near-boundary representation is a plausible startup failure mechanism, not an established cause.
+- The generic RAM loader modifies a small M4 eMMC read/write hook on boot even when the source firmware image is unchanged. We had **not** previously run this exact installed HXtra v1.2.1 donor HXF as an unchanged source through the same RAM loader. R02B2's startup success used a different rebuilt firmware composition and thus does not settle that baseline compatibility.
+
+## Next discriminating test: positive-control donor RAM image
+
+A new control `METRO-DONOR-V121-UNCHANGED-RAM-CONTROL` stages the exact original installed HXtra v1.2.1 HXF through the same RAM-only WebUSB loader. M4 and SHARC feature code from the donor is unchanged (the standard RAM-loader eMMC hook is still applied). The plan explicitly contains **zero changed eMMC overlay sectors**, **9 SDRAM regions**, and **one positive on-device donor verification** of Entry2's first `1023` sectors starting at absolute sector `34819` with CRC32 `3485190247`, independently recomputed from the exact donor bytes. This reuses the R02C checksum criteria without disabling any safety check.
+
+The Mac mini serves the control at `http://localhost:8765/METRO-DONOR-V121-UNCHANGED-RAM-CONTROL/`. Its versioned runner and reproducible generator are `web/experiments/metro-donor-v121-unchanged-control/` and `tools/build_metro_donor_v121_control.py`. **No baseline hardware outcome yet.** The user must power-cycle to exit R02C and explicitly initiate the unchanged-donor WebUSB RAM test.
+
+Interpretation:
+
+1. If unchanged donor **also** freezes, R02C-specific metronome logic is unnecessary for the failure. Focus on WebUSB RAM loader support for the donor boot layout, eMMC proxy behavior, and any shared initialization step.
+2. If unchanged donor boots fully, isolate R02C's M4 and SHARC layers with separate exact-donor, RAM-only minimal deltas; prioritize the new LED sender hook, the almost-full SHARC Entry2 boundary, and the new SPI tail-frame marker. An isolated diagnostic control should still preserve all installed donor features.
+3. For either outcome, retain the actual browser diagnostic log (browser UI Save log), current LED/screen/audio behavior, and whether the editor SYN returns. Avoid another multifunction R02C release until the start-up failure is reproduced and causal changes are verified.
+
+The current root cause is **undetermined**; do not claim that the physical LED sync itself caused the freeze.

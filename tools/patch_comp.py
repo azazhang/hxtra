@@ -22,6 +22,8 @@ import patch_amp as pa
 import nam_multi
 
 ASM = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'sharc', 'frame_probe.asm')
+ASM_R02B1 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'sharc', 'frame_probe_r02b1.asm')
+
 
 WRAPS = ((0x271a, 0x8d9c9), (0x2719, 0x8d342), (0x2710, 0x8d342))    # (primitive, its stock process code): frame_probe.asm's ORIG..
 COMP_MODELS = (   # (model, its compressor core's primitive: one of WRAPS)
@@ -334,7 +336,8 @@ def e0_set_param_counts(e0, name_idx, old, new):
 
 def dsp_asm(dm, pm):
     """frame_probe.asm with its data at dm and its code at pm."""
-    return open(ASM).read().replace('GR_DM_BASE', f'{dm:#x}').replace('GR_PM_BASE', f'{pm:#x}')
+    variant = ASM_R02B1 if os.environ.get('HX_METRO_SPI_CANARY') else ASM
+    return open(variant).read().replace('GR_DM_BASE', f'{dm:#x}').replace('GR_PM_BASE', f'{pm:#x}')
 
 
 def nw(pm):

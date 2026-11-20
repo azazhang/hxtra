@@ -1,4 +1,4 @@
-"""METRO-TAPSYNC-R02A-M4EDGE: actual Thumb code under Unicorn Cortex-M4.
+"""Inherited METRO-TAPSYNC-R02A-M4EDGE edge hooks retested in R02B1 image.
 
 Confirms that the TAP LED callback and bypass hook only touch aligned u32
 counters, leave app/system locks untouched, preserve the stock return, and
@@ -87,14 +87,14 @@ class Machine:
 
     def counters(self):
         addr = BASE + self.sym['mp_counters']
-        return struct.unpack('<3I', self.uc.mem_read(addr, 12))
+        return struct.unpack('<8I', self.uc.mem_read(addr, 32))
 
 
 def test_beat_hook_only_calls_original_stock_getter(assembled):
     m = Machine(assembled)
     for n in range(1, 5):
         assert m.call('mp_beat', r0=99, r1=66, r2=55) == 42
-        assert m.counters() == (n, 0, 0x52303241)
+        assert m.counters()[:2] == (n, 0)
     assert m.callbacks == ['fs_state'] * 4
 
 
@@ -120,8 +120,9 @@ def test_usb_command_reports_binary_snapshot(assembled):
     m.uc.mem_write(request + 0xc, struct.pack('<H', 0x1234))
     m.call('mp_command', r0=0x20002000, r1=request)
     assert m.sent[:3] == (0x20002000, 0x1234, 0)
-    assert m.sent[3][:2] == b'\xc4\x0c'
-    assert struct.unpack('<3I', m.sent[3][2:]) == (3, 1, 0x52303241)
+    assert m.sent[3][:2] == b'\xc4\x20'
+    values=struct.unpack('<8I',m.sent[3][2:])
+    assert values[:2] == (3, 1) and values[-1]==0x31423252
 
 
 def test_there_are_no_fpu_or_lock_api_calls_in_realtime_hooks(assembled):

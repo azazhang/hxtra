@@ -31,6 +31,17 @@ import kit_patch_amp as kit
 import l6ia
 
 ASM = os.path.join(SCRIPT_DIR, '..', 'src', 'sharc', 'click.asm')
+
+PHASE_ASM = os.path.join(SCRIPT_DIR, '..', 'src', 'sharc', 'click_phase.asm')
+
+
+def click_source(for_size=False):
+    if not os.environ.get('HX_METRO_PHASE'):
+        return open(ASM).read()
+    import patch_metro_phase
+    shared_event = 0xe4000 if for_size else patch_metro_phase.event_word()
+    return open(PHASE_ASM).read().replace('KIT_MP_EVENT_ADDR', f'{shared_event:#x}')
+
 NAME, DISPLAY, FOLDER = 'HD2_ClickMetronomeMono', 'Metronome', 'Metronome'
 PRESET_ID = 181                     # fixed for ever: presets store it
 DSP_COST = 50
@@ -168,7 +179,7 @@ def replace_last_blob(e4, blob_index, words):
 
 def kernel_size():
     """The kernel's instructions."""
-    secs, _ = kit.sasm.assemble(open(ASM).read().replace('KIT_PM_BASE', '0xe0000'), 'click.asm')
+    secs, _ = kit.sasm.assemble(click_source(for_size=True).replace('KIT_PM_BASE', '0xe0000'), 'click.asm')
     return sum(len(s.words) for s in secs if s.kind == 'pm')
 
 
@@ -235,7 +246,7 @@ def add_click(l6ia_bytes, log=print):
     out, _, _ = l6ia.rebuild_archive(l6ia_bytes, {0: bytes(new_e0), 2: l6ia.swap32(e2_raw), 3: new_e3, 4: new_e4})
 
     base = pm_base()
-    out, kinfo = kit.patch_kernel(out, open(ASM).read(), 'click.asm', prim=PRIM, pm_base=base, relocate=False, log=log)
+    out, kinfo = kit.patch_kernel(out, click_source(), 'click.asm', prim=PRIM, pm_base=base, relocate=False, log=log)
     return out, {'model_id': model_id, 'blob': blob, 'composite': comp, 'preset_id': pid, 'pm_base': base,
                  'entry': kinfo['entry'], 'params': params}
 

@@ -136,6 +136,10 @@ def main():
     if os.environ.get("HX_CLICK"):
         run(py, "tools/patch_click.py", image, titled)
         os.replace(titled, image)
+    if os.environ.get("HX_METRO_PHASE"):
+        sys.exit("HX_METRO_PHASE is quarantined: M4 UI freeze on BPM change."
+                 " Do not rebuild or RAM-load this experimental firmware."
+                 " See build/browser-ramrun/phase41c/QUARANTINED.txt")
     if os.environ.get("HX_FX_GATE"):
         run(py, "tools/patch_gate.py", image, titled)
         os.replace(titled, image)

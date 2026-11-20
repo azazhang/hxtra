@@ -28,7 +28,7 @@ import nam_multi
 VAR = 'HX_NAM_SLOTS'
 SLOTS = (3, 2, 1, 0)
 # (switch, the tool whose dsp_size() gives its (data words, instructions)), from the top of the room down
-FEATURES = (('HX_CLICK', 'patch_click'), ('HX_FX_GATE', 'patch_gate'), ('HX_GR', 'patch_comp'), ('HX_USB_MONITOR', 'patch_usbmon'),
+FEATURES = (('HX_CLICK', 'patch_click'), ('HX_METRO_PHASE', 'patch_metro_phase'), ('HX_FX_GATE', 'patch_gate'), ('HX_GR', 'patch_comp'), ('HX_USB_MONITOR', 'patch_usbmon'),
             ('HX_GATE_SC', 'patch_sidechain'))
 
 

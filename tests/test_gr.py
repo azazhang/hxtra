@@ -228,11 +228,11 @@ def test_probe_writes_only_the_words_the_m4_reads():
     for _ in range(64):
         block(s, sym, 'ENTRY_2719', 0x96000, 0.5)
     written = {200, 216, 217, 218, 250, 251}
-    if os.environ.get('HX_METRO_SPI_CANARY'):
+    if os.environ.get('HX_METRO_SPI_CANARY') or os.environ.get('HX_METRO_EVENT_ECHO'):
         # The opt-in transport diagnostic mirrors two candidate receive-buffer
         # words into the previously-unused 220/221 slots. The GR-only build
         # must still preserve every other frame word.
-        written.update((220, 221))
+        written.update((220, 221, 222, 223))
     assert all(s.rd(FRAME + k) == 0x5A5A0000 + k for k in range(1, 255) if k not in written)
     assert s.rd(FRAME + 200) == 0x600DF00D and s.rd(FRAME + 250) == 1
 
@@ -536,7 +536,7 @@ def test_gr_build(tmp_path, flags):
     if not stock:
         pytest.skip('HX_STOMP_HXF is not set')
     out = tmp_path / 'gr.hxf'
-    env = {k: v for k, v in os.environ.items() if k not in ('HX_GR', 'HX_CLICK', 'HX_METRO_SPI_CANARY')} | {f: '1' for f in flags.split()}
+    env = {k: v for k, v in os.environ.items() if k not in ('HX_GR', 'HX_CLICK', 'HX_METRO_SPI_CANARY', 'HX_METRO_EVENT_ECHO')} | {f: '1' for f in flags.split()}
     r = subprocess.run([sys.executable, str(ROOT / 'build.py'), stock, '-o', str(out), '--no-check'],
                        capture_output=True, text=True, cwd=ROOT, env=env)
     assert r.returncode == 0, r.stdout + r.stderr

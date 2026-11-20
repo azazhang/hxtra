@@ -87,7 +87,7 @@ class Machine:
 
     def counters(self):
         addr = BASE + self.sym['mp_counters']
-        return struct.unpack('<8I', self.uc.mem_read(addr, 32))
+        return struct.unpack('<12I', self.uc.mem_read(addr, 48))
 
 
 def test_beat_hook_only_calls_original_stock_getter(assembled):
@@ -120,9 +120,9 @@ def test_usb_command_reports_binary_snapshot(assembled):
     m.uc.mem_write(request + 0xc, struct.pack('<H', 0x1234))
     m.call('mp_command', r0=0x20002000, r1=request)
     assert m.sent[:3] == (0x20002000, 0x1234, 0)
-    assert m.sent[3][:2] == b'\xc4\x20'
-    values=struct.unpack('<8I',m.sent[3][2:])
-    assert values[:2] == (3, 1) and values[-1]==0x31423252
+    assert m.sent[3][:2] == b'\xc4\x30'
+    values=struct.unpack('<12I',m.sent[3][2:])
+    assert values[:2] == (3, 1) and values[-1]==0x31453142
 
 
 def test_there_are_no_fpu_or_lock_api_calls_in_realtime_hooks(assembled):

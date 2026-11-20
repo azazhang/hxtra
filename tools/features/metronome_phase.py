@@ -1,13 +1,13 @@
-"""METRO-TAPSYNC-R02B1-SPI-CANARY: M4 frame canary and read-only echo.
+"""METRO-TAPSYNC-R02B1E-EVENT-ECHO: dynamic M4-to-SHARC event probe.
 
-HX_METRO_SPI_CANARY=1. R02A integer-only event callbacks retained.
-A hooked M4 TX frame callback writes a canary to reserved tail words of
-small SPI frames. The DSP RX callback reads back the SHARC echo on words
-220/221. No audio sync attempted in this transport-probe stage.
+HX_METRO_EVENT_ECHO=1. R02A integer-only event callbacks retained.
+A hooked M4 TX frame callback writes a canary and two event counters to
+reserved tail words of small SPI frames. The SHARC mirrors four words
+back, including the integrity check. No audio phase changes at this stage.
 """
 import usb_commands
 
-FLAG = 'HX_METRO_SPI_CANARY'
+FLAG = 'HX_METRO_EVENT_ECHO'
 MENU = False
 WEB = False
 

@@ -1,4 +1,4 @@
-@ METRO-TAPSYNC-R02B1-SPI-CANARY (2026-11-20): M4 TX SPI frame diagnostic.
+@ METRO-TAPSYNC-R02B1E-EVENT-ECHO (2026-11-20): end-to-end event counter proof.
 @ R01 froze M4 controls on BPM adjustment because the timing callback called
 @ locking app-param/settings functions and executed VFP instructions.
 @
@@ -16,7 +16,7 @@
 .equ REPLY_SEND,   0x28e15b31    @ (stream, seq, status, data, [sp] data bytes)
 .equ FS_STATE,     0x28d9607d    @ original stock TAP callback (must preserve result)
 .equ METRO_GRID_41C, 8          @ block slot 7 on 41C is DSP grid position 8
-.equ REPLY_BYTES,  34          @ MessagePack BIN8 32-byte payload + 2-byte header
+.equ REPLY_BYTES,  50          @ MessagePack BIN8 48-byte payload + 2-byte header
 .equ SPI_MAGIC,    0xFACEF00D
 .equ SPI_TRAILER,  0xD00FECAF
 .equ TX_CANARY,    0x4D543242  @ "B2TM" little-endian, R02B1 frame marker
@@ -74,13 +74,13 @@ mp_command:                      @ read-only editor command on regular UI servic
     ldrh r8, [r1, #0xc]         @ sequence ID
     adr.w r4, mp_counters
     adr.w r5, mp_reply
-    add r5, #2                  @ the 12 payload bytes, after BIN8 header
+    add r5, #2                  @ the 48 payload bytes, after BIN8 header
     movs r6, #0
 mp_copy:
     ldrb r0, [r4, r6]
     strb r0, [r5, r6]
     adds r6, #1
-    cmp r6, #32
+    cmp r6, #48
     blo mp_copy
     movs r0, #REPLY_BYTES
     str r0, [sp]
@@ -100,16 +100,20 @@ mp_counters:
     .word 0                     @ TX frames stamped
     .word 0                     @ TX frames skipped (large/invalid)
     .word 0                     @ GR-marked DSP RX frames seen
-    .word 0                     @ DSP RX word220 probe (raw halfword-swapped)
-    .word 0                     @ DSP RX word221 probe (raw halfword-swapped)
-    .word 0x31423252            @ LE "R2B1": exact image signature
-@ Before the stock DSP->M4 receive callback, which owns SPI RX DMA frames.
-@ Captures the diagnostic 220/221 words the SHARC puts in an outgoing frame.
-@ This hook only reads the four words and touches its own counters.
+    .word 0                     @ DSP RX word220: SHARC-observed M4 TX marker
+    .word 0                     @ DSP RX word221: SHARC-observed TAP event count
+    .word 0                     @ DSP RX word222: SHARC-observed metronome re-enable count
+    .word 0                     @ DSP RX word223: SHARC-observed integrity checksum
+    .word 0                     @ confirmed valid echoed event frames
+    .word 0                     @ echoed marker-present frames failing checksum
+    .word 0x31453142            @ LE "B1E1": exact firmware signature
+@ Before the stock DSP->M4 receive callback. SHARC mirrors TX words 240..243
+@ to its return-frame words 220..223. Snapshot four echoed values and check
+@ the marker / 32-bit XOR complement without any locks or runtime API calls.
 .thumb_func
 mp_rx_probe:                     @ r0=stream ctx, r1=256-word RX frame
-    push {r4, r5, lr}
-    ldr.w r2, [r1, #800]         @ GR word200 magic is halfword-swapped on M4
+    push {r4-r6, lr}
+    ldr.w r2, [r1, #800]         @ GR frame word200, as M4 receives it
     ldr r3, =0xF00D600D
     cmp r2, r3
     bne mp_rx_done
@@ -117,12 +121,32 @@ mp_rx_probe:                     @ r0=stream ctx, r1=256-word RX frame
     ldr r2, [r4, #16]
     adds r2, #1
     str r2, [r4, #16]
-    ldr.w r2, [r1, #880]         @ SHARC word220: candidate SPI RX slot A
+    ldr.w r2, [r1, #880]         @ DSP echo word220: M4 TX marker
     str r2, [r4, #20]
-    ldr.w r2, [r1, #884]         @ SHARC word221: candidate SPI RX slot B
-    str r2, [r4, #24]
+    ldr.w r5, [r1, #884]         @ DSP echo word221: M4 TAP count
+    str r5, [r4, #24]
+    ldr.w r6, [r1, #888]         @ DSP echo word222: M4 re-enable count
+    str r6, [r4, #28]
+    ldr.w r3, [r1, #892]         @ DSP echo word223: M4 integrity check
+    str r3, [r4, #32]
+    ldr r1, =TX_CANARY
+    cmp r2, r1
+    bne mp_rx_done
+    eors r5, r6
+    eors r5, r2
+    mvns r5, r5
+    cmp r5, r3
+    bne mp_rx_bad
+    ldr r2, [r4, #36]
+    adds r2, #1
+    str r2, [r4, #36]
+    b mp_rx_done
+mp_rx_bad:
+    ldr r2, [r4, #40]
+    adds r2, #1
+    str r2, [r4, #40]
 mp_rx_done:
-    pop {r4, r5, pc}
+    pop {r4-r6, pc}
 
 @ After the original M4 SPI TX callback 0x10000e95 has completed constructing
 @ a frame. The original TX function writes its header/trailer to r1 and may
@@ -168,7 +192,7 @@ mp_tx_done:
     pop {r4-r6, pc}
 
 mp_reply:
-    .byte 0xc4, 32              @ MessagePack bin8 length 32
-    .space 32
+    .byte 0xc4, 48              @ MessagePack bin8 length 48
+    .space 48
 .align 2
 .ltorg

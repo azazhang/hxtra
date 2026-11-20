@@ -1,4 +1,4 @@
-// METRO-TAPSYNC-R02B1-SPI-CANARY: add two read-only M4->SHARC DMA buffer probes.
+// METRO-TAPSYNC-R02B1E-EVENT-ECHO: mirror 4 verified M4->SHARC DMA words.
 // frame_probe.asm - the GR meter's DSP side: a wrapper around the compressor cores (primitives 0x271a, 0x2719, 0x2710) that calls
 // the stock process code and, for the metered core, measures the peaks of its input and output over a window; and their control
 // functions, which keep the blocks' Mtr knobs. It finds the DSP's outgoing SPI frames in memory and writes into their unused tail
@@ -317,13 +317,18 @@ fp_chk:
     DM(217, I4) = R2;
     R2 = DM(GR_PACK);                   // in 218: a tag in word 253 never reached the M4
     DM(218, I4) = R2;
-    // R02B1 diagnostic, only in this opt-in variant: copy two candidate
-    // M4->DSP ring slots into unused DSP->M4 frame words for USB readout.
-    // DM memory reads are bounded and word220/221 are not used by GR.
-    R2 = DM(0xC3DA6);                   // candidate buffer A (0xc3cb6 + 240)
+    // R02B1 HWQA verified frame word240 arrives at SHARC 0xc3da6.
+    // Mirror all four adjacent M4 TX canary/event/check words on the proven
+    // ring: 240 marker, 241 tap, 242 enable, 243 integrity checksum.
+    // Return words220..223 are unused by GR and decoded by the M4 RX hook.
+    R2 = DM(0xC3DA6);
     DM(220, I4) = R2;
-    R2 = DM(0xC3FA6);                   // candidate buffer B (0xc3eb6 + 240)
+    R2 = DM(0xC3DA7);
     DM(221, I4) = R2;
+    R2 = DM(0xC3DA8);
+    DM(222, I4) = R2;
+    R2 = DM(0xC3DA9);
+    DM(223, I4) = R2;
     R2 = DM(FP_WIN + 2);
     DM(250, I4) = R2;
     R2 = DM(FP_WIN + 3);

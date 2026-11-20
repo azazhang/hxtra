@@ -1,0 +1,6 @@
+{"sample": 0, "monotonic": 0.644798625, "revision": "METRO-TAPSYNC-R02A-M4EDGE", "tap_led_on_count": 123, "metro_41c_enable_count": 0, "raw_tag": "0x52303241"}
+{"sample": 1, "monotonic": 1.248639041, "revision": "METRO-TAPSYNC-R02A-M4EDGE", "tap_led_on_count": 124, "metro_41c_enable_count": 0, "raw_tag": "0x52303241"}
+{"sample": 2, "monotonic": 1.851904375, "revision": "METRO-TAPSYNC-R02A-M4EDGE", "tap_led_on_count": 125, "metro_41c_enable_count": 0, "raw_tag": "0x52303241"}
+{"sample": 3, "monotonic": 2.458171708, "revision": "METRO-TAPSYNC-R02A-M4EDGE", "tap_led_on_count": 126, "metro_41c_enable_count": 0, "raw_tag": "0x52303241"}
+{"sample": 4, "monotonic": 3.06486275, "revision": "METRO-TAPSYNC-R02A-M4EDGE", "tap_led_on_count": 127, "metro_41c_enable_count": 0, "raw_tag": "0x52303241"}
+{"sample": 5, "monotonic": 3.671729833, "revision": "METRO-TAPSYNC-R02A-M4EDGE", "tap_led_on_count": 128, "metro_41c_enable_count": 0, "raw_tag": "0x52303241"}

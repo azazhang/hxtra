@@ -26,9 +26,20 @@ def main():
             s=hx_ctl.summarize(p)
             if len(s)!=8 or [x['model_id'] for x in s]!=[x['model_id'] for x in original['blocks']]:
                 raise RuntimeError('Preset model layout differs from baseline')
-            ctr=probe.decode(c.ed.request(0x50,timeout=3))
-            if ctr['dsp_echo_marker']!='0x4d543242' or not ctr['dsp_echo_integrity_valid']:
-                raise RuntimeError(f'SHARC event echo or checksum failed: {ctr}')
+            # A USB read may race the M4 RX callback's byte-by-byte response
+            # serialization. Record any torn diagnostic snapshots, then re-read;
+            # never silently count a corrupted snapshot as a verified sample.
+            for attempt in range(4):
+                ctr=probe.decode(c.ed.request(0x50,timeout=3))
+                if ctr['dsp_echo_marker']=='0x4d543242' and ctr['dsp_echo_integrity_valid']:
+                    break
+                bad={'id':'METRO-TAPSYNC-R02B1E-EVENT-ECHO/HWQA01',
+                    'step':f'{label}_invalid_echo_attempt_{attempt+1}',
+                    'timestamp':time.time(),**ctr}
+                stream.write(json.dumps(bad)+'\n');stream.flush()
+                print(json.dumps(bad),flush=True)
+                if attempt==3:raise RuntimeError(f'Four consecutive invalid SHARC echoes: {ctr}')
+                time.sleep(.015)
             if ctr['dsp_echo_valid_frames']==0:
                 raise RuntimeError(f'No verified dynamic SHARC return frames: {ctr}')
             tap_lag=ctr['tap_count_difference_m4_minus_dsp']

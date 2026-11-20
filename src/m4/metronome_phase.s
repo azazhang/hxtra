@@ -1,4 +1,4 @@
-@ METRO-TAPSYNC-R02B2-AUDIO-PHASE (2026-11-20): TAP-anchored SHARC click.
+@ METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER: donor-parity M4 event bridge.
 @ R01 froze M4 controls on BPM adjustment because the timing callback called
 @ locking app-param/settings functions and executed VFP instructions.
 @
@@ -6,6 +6,7 @@
 @ the read-only USB diagnostics run separately on HX Edit's normal UI service.
 @ Extra hooks stamp a short canary and the current event counters in unused
 @ tail words of small SPI TX frames and read probe values echoed by the SHARC.
+@ Original Tap Command LED handling is called before the beat counter changes.
 @ No stock frame payload or header is overwritten; long frames are skipped.
 @ All callbacks are bounded, integer-only and never call lock-taking APIs.
 .syntax unified
@@ -14,7 +15,10 @@
 .equ REGISTER,     0x28e165f1    @ (command, &{handler, check, 0})
 .equ NO_PARAMS,    0x28e19205    @ second command callback
 .equ REPLY_SEND,   0x28e15b31    @ (stream, seq, status, data, [sp] data bytes)
-.equ FS_STATE,     0x28d9607d    @ original stock TAP callback (must preserve result)
+.equ FS_STATE,     0x28d9607d    @ stock TAP state getter
+.ifndef METRO_PREV_BEAT
+.equ METRO_PREV_BEAT, FS_STATE      @ standalone binary simulation default
+.endif
 .equ METRO_GRID_41C, 8          @ block slot 7 on 41C is DSP grid position 8
 .equ REPLY_BYTES,  50          @ MessagePack BIN8 48-byte payload + 2-byte header
 .equ SPI_MAGIC,    0xFACEF00D
@@ -25,8 +29,8 @@
 .thumb_func
 mp_beat:                         @ replaces stock FS_STATE call during LED ON event
     push {r4, lr}
-    ldr r3, =FS_STATE
-    blx r3                      @ exact original operation
+    ldr r3, =METRO_PREV_BEAT
+    blx r3                      @ stock FS_STATE, or donor's Tap Command tc_on
     mov r4, r0
     adr.w r1, mp_counters
     ldr r2, [r1]                @ atomic aligned 32-bit counter
@@ -106,7 +110,7 @@ mp_counters:
     .word 0                     @ DSP RX word223: SHARC-observed integrity checksum
     .word 0                     @ confirmed valid echoed event frames
     .word 0                     @ echoed marker-present frames failing checksum
-    .word 0x32423252            @ LE "R2B2": exact firmware signature
+    .word 0x33423252            @ LE "R2B3": exact firmware signature
 @ Before the stock DSP->M4 receive callback. SHARC mirrors TX words 240..243
 @ to its return-frame words 220..223. Snapshot four echoed values and check
 @ the marker / 32-bit XOR complement without any locks or runtime API calls.

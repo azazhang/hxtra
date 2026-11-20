@@ -1,9 +1,9 @@
-"""METRO-TAPSYNC-R02B2-AUDIO-PHASE: actual M4 binary -> simulated SPI -> SHARC binary -> M4 binary -> host."""
+"""METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER: actual M4 binary -> simulated SPI -> SHARC binary -> M4 binary -> host."""
 import struct
 import pytest
 import test_gr as gr
-import test_metro_r02b2_spi_frame as mt
-import metro_tapsync_r02b2_probe as probe
+import test_metro_r02b3_spi_frame as mt
+import metro_tapsync_r02b3_probe as probe
 from unicorn.arm_const import UC_ARM_REG_R1,UC_ARM_REG_R2
 
 

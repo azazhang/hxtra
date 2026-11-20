@@ -1,4 +1,4 @@
-"""METRO-TAPSYNC-R02B2-AUDIO-PHASE: actual SHARC kernel, independent DSP simulation.
+"""METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER: actual SHARC kernel, independent DSP simulation.
 
 The test drives the R02B1E-verified SPI DMA words directly into SHARC memory,
 and tests the real metronome assembly after every audio callback, including
@@ -135,7 +135,8 @@ def test_missing_taps_fall_back_to_local_clock(monkeypatch):
     spi_event(c,12,1)
     c.call()
     assert c.sim.rd(I0+31)==1
-    assert c.sim.rd(I0+21)==3
+    # R02B3 must relock the recovered TAP pulse as the accented downbeat.
+    assert c.sim.rd(I0+21)==1
 
 
 def test_standalone_no_spi_still_plays_original_first_beat(monkeypatch):

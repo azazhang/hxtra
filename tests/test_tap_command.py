@@ -389,7 +389,11 @@ def test_a_tempo_setting_change_resets_only_a_tap_footswitchs_beat_on_stock():
 
 
 @pytest.mark.firmware
-def test_build_sends_every_site_to_the_module(m4emu):
+def test_build_sends_every_site_to_the_module(m4emu, monkeypatch):
+    # This is the isolated HX_CC_TAP-only build. R02B3 deliberately delegates
+    # its shared LED beat-on site to the metronome's one-owner event bridge
+    # when HX_METRO_SPI_PHASE is enabled; test that combination separately.
+    monkeypatch.delenv('HX_METRO_SPI_PHASE', raising=False)
     read, on = built({'HX_CC_TAP': '1'})
     code, sym = m4emu.assemble(cmd.MODULE, MODS, IDS, inc={'tap.inc': tap_inc(False)})
     assert 'tap_command' in on and 'tap_color' not in on

@@ -1,4 +1,4 @@
-// METRO-TAPSYNC-R02B2-AUDIO-PHASE: SPI event-anchored 41C quarter-note click.
+// METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER: BPM-stable TAP phase and accents.
 // click_spi_phase.asm - the Metronome block's kernel: a short tone burst on every beat, added to
 // the block's input. A primitive of the stock HX Stomp 3.80 firmware, called once per
 // 16-sample block with I0 the instance's DM block, I1 the input and I2 the output.
@@ -20,6 +20,11 @@
 // Note subdivisions other than 1/4 are outside this version's phase contract.
 // On first creation with a valid SPI frame, wait for the next TAP LED pulse;
 // on standalone startup with no valid frame, retain the original first click.
+// R02B3: preserve the previous TAP period across tempo changes: a faster
+// BPM cannot manufacture a stale-event timeout, phantom click, or displaced
+// accent. Isolated invalid SPI frames never bypass the external-phase guard.
+// A genuine two-beat TAP dropout may fall back to the local clock, but the
+// first returning TAP event resets the bar to an accented downbeat.
 
 .equ C_SINCE,  20                       // samples since the last beat
 .equ C_MET,    26                       // nonzero after the first call
@@ -29,6 +34,7 @@
 .equ C_SPI_ENABLE, 30                  // last acknowledged 41C metronome-enable counter
 .equ C_SPI_MASTER, 31                  // external TAP phase active
 .equ C_SPI_PENDING,32                  // one exactly-once audio click due at block start
+.equ C_SPI_HOLD_PERIOD,33              // Time samples at the most recent real TAP edge
 .equ SPI_MARKER,   0x4d543242          // validated R02B1 / B1E on SHARC 0xc3da6
 .equ SPI_RING,     0xc3da6            // M4 SPI TX words240..243, observed in SHARC DM
 .equ C_GAP,    375000                  // > 2.5 x 150k cycles, to tolerate scheduling jitter
@@ -173,6 +179,7 @@ c_spi_reenable:
     JUMP c_reset_bar;                 // next external TAP is accented downbeat
 
 c_reset_bar:
+    DM(C_SPI_HOLD_PERIOD, I0) = R12;   // preserve pre-edit TAP period on initial/re-enable
     R5 = 0;
     DM(C_BEAT, I0) = R5;
     DM(C_ENV, I0) = R5;
@@ -184,6 +191,19 @@ c_reset_bar:
 
 c_spi_beat_event:
     DM(C_SPI_TAP, I0) = R2;
+    DM(C_SPI_HOLD_PERIOD, I0) = R12; // update only when a real TAP arrives
+    // A dropout may have allowed local beats. On the first returning TAP,
+    // restart the accent at the downbeat instead of preserving the old phase.
+    R5 = DM(C_SPI_MASTER, I0);
+    R5 = PASS R5;
+    IF NE JUMP c_spi_edge_live;
+    R5 = 0;
+    DM(C_BEAT, I0) = R5;
+    DM(C_ENV, I0) = R5;
+    DM(C_Y1, I0) = R5;
+    DM(C_Y2, I0) = R5;
+    DM(C_COEF, I0) = R5;
+c_spi_edge_live:
     R5 = 1;
     DM(C_SPI_MASTER, I0) = R5;
     DM(C_SPI_PENDING, I0) = R5;      // one precisely once-per-edge click
@@ -191,8 +211,16 @@ c_spi_beat_event:
     JUMP c_resume;
 
 c_spi_invalid:
-    // Use the original kernel's local clock on power-up without a valid
-    // transport frame. Isolated invalid frames cannot cause a spurious beat.
+    // After acquiring a valid M4 TAP stream, even a single bad SPI snapshot
+    // must honor the external-phase guard. On R02B2 this path fell directly
+    // into the local clock and generated an offbeat when BPM changed.
+    R1 = DM(C_SPI_SEEN, I0);
+    R1 = PASS R1;
+    IF EQ JUMP c_spi_no_stream;
+    R0 = DM(C_SINCE, I0);
+    JUMP c_resume;
+c_spi_no_stream:
+    // Retain original standalone click start when no valid transport exists.
     R1 = DM(C_MET, I0);
     R1 = PASS R1;
     IF EQ JUMP c_restart;
@@ -224,6 +252,9 @@ c_resume:
     F2 = DM(C_Y2, I0);
     F3 = DM(C_COEF, I0);
     F5 = 0.99653379;
+    R11 = DM(C_SPI_HOLD_PERIOD, I0);
+    R11 = MAX(R11, R12);              // guard against shortening Time mid-beat
+    R11 = R11 + R11;                  // two periods from longest old/new tempo
 
     // A validated new TAP event starts the next click at the first audio
     // sample of this 16-sample block, with no local-oscillator double-click.
@@ -238,8 +269,7 @@ c_spi_no_pending:
       R9 = DM(C_SPI_MASTER, I0);
       R9 = PASS R9;
       IF EQ JUMP c_spi_local;
-      R9 = R12 + R12;                // 2 expected quarter-note periods
-      COMP(R0, R9);
+      COMP(R0, R11);                // 2 x MAX(last real TAP period, current Time)
       IF LT JUMP c_spi_no_local_tick;
       R9 = 0;
       DM(C_SPI_MASTER, I0) = R9;     // TAP absent: recover local click timing

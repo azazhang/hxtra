@@ -1,11 +1,11 @@
-"""METRO-TAPSYNC-R02B2-AUDIO-PHASE: execute actual Thumb TX/RX hooks in Unicorn."""
+"""METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER: execute actual Thumb TX/RX hooks in Unicorn."""
 import os
 import struct
 import tempfile
 import pytest
 import m4asm
 import usb_commands
-import metro_tapsync_r02b2_probe as probe
+import metro_tapsync_r02b3_probe as probe
 from unicorn import Uc,UC_ARCH_ARM,UC_MODE_THUMB,UC_HOOK_CODE
 from unicorn.arm_const import UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_REG_R3,UC_ARM_REG_PC,UC_ARM_REG_SP,UC_ARM_REG_LR
 from capstone import Cs,CS_ARCH_ARM,CS_MODE_THUMB
@@ -87,7 +87,7 @@ def test_rx_hook_captures_gr_echo_without_modifying_received_frame(asm):
     m.call('mp_rx_probe',{UC_ARM_REG_R1:p})
     assert bytes(m.u.mem_read(p,1024))==before
     assert m.counters()[4:11]==(1,probe.CANARY,beat,enable,checksum,1,0)
-    assert probe.decode(struct.pack('<12I',*m.counters()))['revision']=='METRO-TAPSYNC-R02B2-AUDIO-PHASE'
+    assert probe.decode(struct.pack('<12I',*m.counters()))['revision']=='METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER'
 
 def test_rx_hook_ignores_non_gr_frames(asm):
     m=Machine(asm)

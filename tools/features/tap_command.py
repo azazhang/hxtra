@@ -56,7 +56,12 @@ def apply(p):
     p.own_call(STEP_CALL, STEP, 'the Command knob turn', m['tc_step'])
     for site in BEAT_RUN_CALLS:
         p.own_call(site, FS_STATE, f'the stock beat asking for a TAP footswitch at {site:#x}', m['tc_running'])
-    p.own_call(BEAT_ON_CALL, FS_STATE, "the stock beat's turn on", m['tc_on'])
+    if not __import__('os').environ.get('HX_METRO_SPI_PHASE'):
+        p.own_call(BEAT_ON_CALL, FS_STATE, "the stock beat's turn on", m['tc_on'])
+    # In METRO-TAPSYNC-R02B3 the metronome hook owns this single call site.
+    # Its mp_beat calls tc_on first, preserving Tap Command's full LED-ring
+    # behavior, then increments a single bounded integer TAP event counter.
+    # This site must have one owner, and all other tc_* hooks remain installed.
     p.own_call(BEAT_OFF_CALL, LED_MODE, "the stock beat's turn off", m['tc_off'])
     p.own_call(REFRESH_CALL, FS_STATE, 'the footswitch LED refresh', m['tc_refresh'])
     p.own_call(SETTING_CALL, FS_STATE, "a tempo setting's change", m['tc_setting'])

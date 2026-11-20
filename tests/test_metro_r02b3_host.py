@@ -1,7 +1,7 @@
-"""METRO-TAPSYNC-R02B2-AUDIO-PHASE host parser contract."""
+"""METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER host parser contract."""
 import struct
 import pytest
-import metro_tapsync_r02b2_probe as p
+import metro_tapsync_r02b3_probe as p
 
 
 def raw(beat=101,enable=6,echo_beat=100,echo_enable=6,marker=p.CANARY,check=None,good=700,bad=0,tag=p.SIG):
@@ -10,7 +10,7 @@ def raw(beat=101,enable=6,echo_beat=100,echo_enable=6,marker=p.CANARY,check=None
 
 def test_dynamic_event_counts_pass_checksum_and_capture_transport_lag():
     v=p.decode(raw())
-    assert v['revision']=='METRO-TAPSYNC-R02B2-AUDIO-PHASE'
+    assert v['revision']=='METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER'
     assert v['dsp_echo_integrity_valid']
     assert v['dsp_echo_tap_count']==100 and v['tap_led_on_count']==101
     assert v['tap_count_difference_m4_minus_dsp']==1

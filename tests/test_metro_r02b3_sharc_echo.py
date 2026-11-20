@@ -1,4 +1,4 @@
-"""METRO-TAPSYNC-R02B2-AUDIO-PHASE: SHARC four-word verified M4 DMA event echo."""
+"""METRO-TAPSYNC-R02B3-BPM-RELOCK-DSPMETER: SHARC four-word verified M4 DMA event echo."""
 import importlib
 import os
 

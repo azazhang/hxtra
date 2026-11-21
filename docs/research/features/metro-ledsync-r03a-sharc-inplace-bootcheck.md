@@ -1,6 +1,12 @@
 # METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK — SHARC record-topology isolation
 
-**Created:** 2026-11-20, America/New_York. **State:** complete offline binary QA, Mac mini WebUSB staged **Ready**, **no R03A physical RAM boot yet**. Supersedes R02C/HWFAIL02/HWFAIL03/R02D as the next **SHARC-only startup experiment**. R01 remains the running firmware at staging time. This is not a functional LED/audio synchronization firmware.
+**Created:** 2026-11-20, America/New_York. **State:** offline StageQA00 was followed by **successful physical R03A RAM handoff and confirmed M4/editor boot** (HWBOOT01), with acoustic SHARC metronome processing and physical DSP usage numbers still unverified. Supersedes R02C/HWFAIL02/HWFAIL03/R02D as the current **SHARC-only startup experiment**. R01 was running at staging time and was replaced in RAM by R03A at HWBOOT01. This is not a functional LED/audio synchronization firmware.
+
+## HWBOOT01 — independently verified after physical RAM load
+
+The user reported **loaded**. Mac mini Chrome WebUSB showed `R03A SHARC in-place RAM handoff reported`, with all listed payload transfers reporting CRC success and a terminal `started: the firmware runs from RAM` log. A separate read-only Mac mini USB/editor request returned `setlist 0 preset 122 "Super Lead"` with its original eight blocks, including Metronome model 181 slot7 bypassed. macOS `ioreg` enumerated an active HX Stomp USB device. This is **hardware evidence that the firmware M4 booted, the editor services are live, and the M4 can return the stored preset**. Because the Metronome was bypassed, this **does not establish SHARC audio DSP execution**, audible clicks, correct accent, or feature-display parity. Do not claim those are proven before direct physical verification. Exact observations are saved in `tests/hardware_evidence/METRO-LEDSYNC-R03A-SHARC-INPLACE-HWBOOT01-20261120.json`. The original WebUSB transfer validates region transmission, not independent eMMC/SHARC execution.
+
+The tag for StageQA00 records earlier offline conditions and remains historical; do not relabel it as post-hardware validation.
 
 ## Goal and unchanged constraints
 

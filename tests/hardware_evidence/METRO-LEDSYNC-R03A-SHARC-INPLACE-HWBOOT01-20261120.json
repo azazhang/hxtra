@@ -1,0 +1,22 @@
+{
+  "variant": "METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK",
+  "hardware_test_id": "HWBOOT01",
+  "observed_date_local": "2026-11-20",
+  "firmware_HXF_sha256": "1b937f3f862d2e88138d872c0bb3c68913e412605f0655f535ec2da6f8524c78",
+  "source_stageqa_commit": "d2ae0d0",
+  "user_report": "loaded",
+  "webusb_browser_status": "R03A SHARC in-place RAM handoff reported",
+  "webusb_log_tail": "segment 0x28001be4: 97 KiB, CRC ok; segment 0x28d8fa80 at 0x28d8fa80: 836 KiB, CRC ok; hook, overlay table and sectors at 0x29000000: 19 KiB, CRC ok; boot descriptor at 0x29eff000: 0 KiB, CRC ok; stage start; started: the firmware runs from RAM; turn the Stomp off and on to go back",
+  "USB_enumeration": "HX Stomp@01141000, matched active busy0",
+  "editor_status": "setlist 0 preset 122 Super Lead; eight model slots including model 181 Metronome slot7 off",
+  "editor_operational_after_ram_handoff": true,
+  "physical_audio_click_test": "not yet performed: block bypassed",
+  "physical_DSP_usage_percentage_display": "not inspected",
+  "physical_USB_monitor_behavior": "not inspected",
+  "boot_to_editor_verified": true,
+  "SHARC_audio_execution_verified": false,
+  "M4_exact_donor_preserved_by_offline_diff": true,
+  "full_hardware_feature_parity_verified": false,
+  "eMMC_persistently_modified": false,
+  "recovery_needed": false
+}

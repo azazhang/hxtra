@@ -1,0 +1,53 @@
+{
+  "variant": "METRO-LEDSYNC-R03C-HWGLITCH-REPAIR",
+  "stage": "STAGEQA00",
+  "date_local": "2026-11-20",
+  "source_exact_donor_SHA256": "96ac133e094c75f2701226fc7cf3fca4c04b19b91aa34785e646d919979b88c0",
+  "candidate_HXF_SHA256": "42c7bf82a5b0ce478aeedd4d6b8ca27c30cc87680ca2a84473613759cf68ba8b",
+  "candidate_L6IA_SHA256": "843db1c4a8a0165ff54e886307a6a1afae7bd2b7261d1c14fc0703de274768c0",
+  "RAM_plan_SHA256": "cf7b7e22af7bb38674829e988ead6022b0b6d5f0b9cb6ab7b9223cbc58a01157",
+  "web_stage_html_SHA256": "c265ec0a027436485b2bc6be8ac3234f51d357a8a45f10ffbfe71f49c31f0a96",
+  "donor_webusb_loader_SHA256": "59efb032d61d7901c549271fa0a6e147683e08b0eeb1e7812b5e2681b2862931",
+  "donor_webusb_runtime_SHA256": "8ae54c645dbb41c641a8c5c03cde25b19679dec8cd694d337ef5828a6a5601d7",
+  "only_changed_L6IA_entries": [
+    0,
+    2
+  ],
+  "only_changed_original_M4_hook_sites": [
+    "0x28d98f78",
+    "0x28e045a0",
+    "0x28d96adc",
+    "0x28da6138"
+  ],
+  "SHARC_LDR_record_count": 201,
+  "SHARC_Entry2_payload_bytes": 524212,
+  "only_modified_SHARC_LDR_record": 177,
+  "metronome_original_record_instructions": 142,
+  "SHARC_monotone_counter_guard": true,
+  "M4_valid_TAP_packet_grace_frames": 4600,
+  "R01_hardware_LED_transition_trace_events_replayed": 620,
+  "R01_short_reversals_filtered": 6,
+  "R01_accepted_ON_events": 304,
+  "M4_to_SHARC_end_to_end_emulator_tested": true,
+  "read_only_M4_LED_command_to_first_TX_timestamp_us_added": true,
+  "SHARC_receive_to_audio_delay_measurement_available": false,
+  "optical_audio_delay_fixed": false,
+  "hardware_run_started": false,
+  "physical_R03C_boot_verified": false,
+  "physical_double_click_fix_verified": false,
+  "permanent_eMMC_writes": false,
+  "WebUSB_RAM_only": true,
+  "total_RAM_region_count": 9,
+  "overlay_sector_count": 4,
+  "eMMC_reference_checks_attempted_if_available": 1,
+  "Macmini_http_status": 200,
+  "Macmini_browser_stage": "Ready",
+  "Macmini_webusb_run_button_disabled": false,
+  "Macmini_browser_url": "http://localhost:8765/METRO-LEDSYNC-R03C-HWGLITCH-REPAIR/?build=42c7bf82",
+  "broad_test_suite": {
+    "passed": 113,
+    "skipped": 1,
+    "deselected": 1,
+    "xfail": 4
+  }
+}

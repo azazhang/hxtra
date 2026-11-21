@@ -1,0 +1,43 @@
+{
+  "variant": "METRO-LEDSYNC-R03B-LED-MASTER",
+  "id": "METRO-LEDSYNC-R03B-HWGLITCH01",
+  "date_local": "2026-11-20",
+  "user_report": "the behavior is strange, even with no BPM change. sometimes two clicks sound at the same time.and there's a perceivable delay from the LED to the click.",
+  "subjective_perceptible_lag_milliseconds": "unmeasured",
+  "physical_optical_audio_recording": "not available",
+  "chrome_handoff": "R03B LED-master RAM handoff reported; all displayed RAM regions CRC ok; started",
+  "editor_response_after_user_load": "setlist 0 preset 122 Super Lead; 8 blocks; Metronome model181 slot7 off at later query",
+  "read_only_USB_0x50_signature": "METRO-LEDSYNC-R03B-LED-MASTER",
+  "live_probe_samples": 12,
+  "live_probe_host_monotonic_span_seconds": 2.257581375,
+  "first_sample": {
+    "led_low31": 332,
+    "led_epoch_bit31": true,
+    "m4_spi_tx_frames_stamped": 401065,
+    "skipped": 16204,
+    "short_reversals": 3,
+    "notap_hidden": 3832,
+    "metronome_engage_transitions": 0
+  },
+  "last_sample": {
+    "led_low31": 337,
+    "led_epoch_bit31": true,
+    "m4_spi_tx_frames_stamped": 406290,
+    "skipped": 16204,
+    "short_reversals": 3,
+    "notap_hidden": 3832,
+    "metronome_engage_transitions": 0
+  },
+  "all_12_samples_latest_M4_TX_complement_consistent": true,
+  "all_12_samples_latest_M4_TX_count_equals_latest_M4_LED_count": true,
+  "SHARC_ack_available": false,
+  "live_raw_jsonl_saved": false,
+  "confirmed_R03B_software_faults": [
+    "stale but complement-consistent older count accepted as a new click",
+    "a full native Time interval during invalid zero-zero TAP frames generates a local beat without LED edge"
+  ],
+  "faults_directly_observed_as_audio_root_cause": false,
+  "repair_candidate": "METRO-LEDSYNC-R03C-HWGLITCH-REPAIR",
+  "user_presets_changed_by_assistant": false,
+  "hardware_RAM_reload_triggered_for_R03C": false
+}

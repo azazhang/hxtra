@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK | HXtra RAM diagnostic</title>
+<style>
+:root {font-family: -apple-system,BlinkMacSystemFont,Inter,system-ui,sans-serif;color-scheme: dark; background:#14171d;color:#e6eaf1}
+body {margin:0 auto;max-width:860px;padding:35px 26px 80px;line-height:1.55}
+h1 {font-size:1.65rem;margin:0 0 14px} h2 {font-size:1.15rem;margin:26px 0 6px}
+p {max-width:770px} code {background:#272d37;padding:2px 5px;border-radius:4px} small {color:#a9b6ca}
+button {cursor:pointer;background:#3883f5;color:#fff;border:0;border-radius:8px;padding:12px 17px;font-size:1rem;font-weight:600}
+button:disabled {background:#404b5d;color:#a6b0c1;cursor:default}
+button.secondary {background:#363e4d}
+#next {display:none; margin-left:8px} #stage {font-weight:600}
+#status {margin:20px 0;padding:12px 15px;border:1px solid #465064;border-radius:8px;background:#232833}
+#log {min-height:160px;max-height:440px;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#090e16;color:#a8e0b8;padding:16px;border-radius:8px;font:12px/1.55 Menlo,Consolas,monospace}
+.warn {color:#ffcb7b}.bad {color:#ff8181}.good {color:#85e3ad}
+progress {width:100%;height:12px; margin:14px 0 6px}
+</style>
+</head>
+<body>
+<h1>METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK</h1>
+<p><strong>SHARC-only, original-boot-record in-place startup check.</strong>
+This is the exact user's installed HXtra v1.2.1 firmware, with
+<strong>only one existing SHARC 142-instruction metronome PM record</strong> altered.
+All 201 original SHARC boot record descriptors, sizes, addresses and order
+are preserved. Entry2 stays <code>524212</code> bytes. The original donor
+M4, DSP Usage Display, USB Monitor, other DSP programs, models, presets and
+settings are unchanged. Donor SHA256
+<code>96ac133e094c75f2701226fc7cf3fca4c04b19b91aa34785e646d919979b88c0</code>.</p>
+<p>The new metronome branch is a proof-of-feasibility. This SHARC-only startup
+check has <strong>no M4 TAP LED event transmitter</strong>, so normal metronome
+behavior should remain free-running. Do not use this build to judge
+LED/audio synchronization. It is intended to isolate whether the new
+SHARC instructions can boot while preserving the donor's boot record
+topology. The receiver's 1-word protocol still needs integrity hardening
+before it becomes a final synchronization design.</p>
+<p class="warn"><strong>Experimental RAM load, user-initiated only.</strong>
+Nine RAM regions. Exactly three RAM-overlay sectors: the revised SHARC CRC
+metadata header at eMMC sector <code>0x8802</code>, one changed SHARC
+payload sector, and the zero-padded unchanged final partial payload sector. No permanent eMMC writes. One read-only donor-reference
+checksum is attempted if the loader's card is readable. The WebUSB
+handoff does not verify physical boot: inspect the real LCD and HX Edit
+editor. If the pedal freezes, save the WebUSB log and physically power
+cycle; do not retry a previous SHARC-failed image.</p>
+<div id="status"><span id="stage">Preparing local files…</span><progress id="progress" max="100" value="0"></progress><div id="details"></div></div>
+<button id="run" disabled>Run METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK from RAM</button>
+<button id="next" class="secondary">Continue — choose device</button>
+<button id="save" class="secondary">Save log</button>
+<h2>Diagnostic log</h2>
+<pre id="log"></pre>
+<script src="ramrun.js"></script>
+<script>
+'use strict';
+const el = id=>document.getElementById(id);
+let ready=null, running=false;
+const log=s=>{el('log').textContent += s; el('log').scrollTop=el('log').scrollHeight;};
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const show=(stage,details)=>{el('stage').textContent=stage;el('details').textContent=details||''};
+const loadBytes=async name=>{const r=await fetch(name,{cache:'no-store'});if(!r.ok) throw Error(`${name}: HTTP ${r.status}`);return new Uint8Array(await r.arrayBuffer());};
+async function preload(){
+ if(!window.isSecureContext || !navigator.usb || !window.RAMRUN) throw Error('WebUSB unavailable. Open this page in Google Chrome on the Mac mini using http://localhost:8765/');
+ const manifest=await (await fetch('regions/plan.json',{cache:'no-store'})).json();
+ if(manifest.regions?.length!==9||manifest.checks?.length!==1||manifest.summary?.writes!=='ram'||manifest.summary?.overlay_sectors!==3||manifest.summary?.changed?.length!==1||manifest.summary?.changed?.[0]?.[0]!==2) throw Error('Preflight: unexpected RAM plan (requires 9 regions, 1 verification range, RAM-only writes)');
+ const [loader, ...data]=await Promise.all(['firmware-ramboot.dfu',...manifest.regions.map(r=>'regions/'+r.file)].map(loadBytes));
+ const regions=manifest.regions.map((r,i)=>({addr:r.addr,label:r.label,bytes:data[i]}));
+ if(loader.length!==4112||loader[0]!==0xda||loader[1]!==0xff) throw Error('Invalid firmware-ramboot.dfu');
+ const total=regions.reduce((n,r)=>n+r.bytes.length,0);
+ ready={plan:{regions,checks:manifest.checks},loader};
+ show('Ready',`WebUSB available; ${regions.length} regions (${(total/1048576).toFixed(2)} MiB), ${manifest.checks.length} eMMC checks; RAM-only writes.`);
+ el('run').disabled=false;
+ log('R03A startup bootcheck preflight: 9 RAM regions, 1 eMMC reference check, 3 metadata/payload overlay sectors, writes=ram.\n');
+ log('METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK | HXtra WebUSB | exact donor M4 and unchanged SHARC LDR descriptor topology\n');
+}
+function ask(stage){
+ show('Device selection required',`Click Continue and choose ${stage==='dfu'?'LPC (1fc9:000c)': 'RAM loader (1209:0001)'} in Chrome's USB device chooser.`);
+ el('next').style.display='inline-block';
+ return new Promise(resolve=>el('next').onclick=()=>{el('next').style.display='none';el('next').onclick=null;resolve();});
+}
+function unask(){el('next').style.display='none';el('next').onclick=null;}
+el('run').onclick=async()=>{
+ if(!ready||running)return;
+ running=true;el('run').disabled=true;el('log').textContent='';el('progress').value=0;show('Starting RAM test','Select the HX Stomp from Chrome’s USB device chooser.');
+ try{
+  await RAMRUN.run({usb:navigator.usb,plan:ready.plan,loader:ready.loader,log,
+   stage:s=>{show('Stage: '+s,'');el('progress').value=0;log('[stage] '+s+'\n');},
+   progress:(f,label)=>{el('progress').value=Math.min(100,Math.floor(f*100));el('details').textContent=`${label}: ${Math.round(f*100)}%`;},
+   ask,unask,sleep});
+  show('R03A SHARC in-place RAM handoff reported','Power-cycle to return to installed HXtra v1.2.1.');
+  log('\nWebUSB RAM handoff reported; physical SHARC and editor boot still unverified.\n');
+ }catch(e){
+  show('RAM run stopped',(e?.code?e.code+': ':'')+(e?.message||String(e)));
+  log('\nERROR: '+(e?.code?e.code+': ':'')+(e?.stack||e?.message||String(e))+'\n');
+ }finally{running=false;el('run').disabled=false;unask();}
+};
+el('save').onclick=()=>{const blob=new Blob([`METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK WebUSB RAM diagnostic\n${new Date().toISOString()}\n${el('status').innerText}\n\n${el('log').textContent}`],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='METRO-LEDSYNC-R03A-SHARC-INPLACE-BOOTCHECK-WebUSB.log';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+preload().catch(e=>{show('Setup failed',e.message);log('ERROR: '+e.stack+'\n');});
+</script>
+</body>
+</html>

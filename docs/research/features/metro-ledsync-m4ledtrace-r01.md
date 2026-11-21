@@ -1,5 +1,7 @@
 # METRO-LEDSYNC-M4LEDTRACE-R01 — donor-preserving LED edge timestamp probe
 
+**Later hardware update (2026-11-20):** R01 subsequently booted successfully on the physical HX Stomp and passed USB editor / diagnostic identity checks; the read-only HWKNOB01 physical BPM-adjustment capture produced 659 valid samples and 620 consecutive LED command transitions. Stable tempo phases were sub-millisecond RMS, but large phase discontinuities and six OFF→ON gaps below 20 ms appeared during BPM adjustments. Full reproducible evidence: [METRO-LEDSYNC-M4LEDTRACE-R01-HWKNOB01](metro-ledsync-m4ledtrace-r01-hwknob01-analysis.md). All statements below about a not-yet-tested image are preserved as the historical *stage QA* snapshot taken before the successful HWBOOT01 and HWKNOB01 tests; they no longer describe the latest hardware state.
+
 **State:** versioned, reproducible **offline-built**, independently re-tested, staged on Mac mini Chrome at **Ready**; **NO physical RAM run has occurred for R01**. Supersedes R02C/HWFAIL02/HWFAIL03 as the next *diagnostic* only. No permanent firmware writes. All records herein refer to this exact version.
 
 ## Purpose / unchanged user requirements

@@ -1,0 +1,178 @@
+{
+  "name": "METRO-LEDSYNC-M4LEDTRACE-R01-HWKNOB01",
+  "source": "METRO-LEDSYNC-M4LEDTRACE-R01-HWKNOB01-live.jsonl",
+  "source_sha256": "10066d19381694172983763b03b4af308ea98db2a80c035ead09da3a6f1f8671",
+  "observational_limit": "M4 LED colour/command after visibility filter, before optical ring; no sound waveform",
+  "usb_samples": 659,
+  "host_sample_elapsed_s": 168.266801,
+  "invalid_samples": [],
+  "duplicated_record_conflicts": [],
+  "edge_count": 620,
+  "sequence_range": [
+    380,
+    999
+  ],
+  "missing_sequences": [],
+  "nonalternating_adjacent_edges": [],
+  "on_count": 310,
+  "off_count": 310,
+  "complete_on_to_on_intervals": 309,
+  "min_on_to_on_ms": 322.836,
+  "max_on_to_on_ms": 1591.358,
+  "stable_segments": [
+    {
+      "name": "110 BPM before edits",
+      "seq_range": [
+        381,
+        815
+      ],
+      "first_on_rel_s": 0.273,
+      "last_on_rel_s": 118.539,
+      "beats": 218,
+      "intervals": 217,
+      "fitted_period_ms": 545.000756,
+      "fitted_bpm": 110.0916,
+      "mean_consecutive_period_ms": 545.0063,
+      "sd_consecutive_period_ms": 0.534114,
+      "rms_phase_residual_ms": 0.382908,
+      "max_abs_phase_residual_ms": 2.086173,
+      "first_fit_residual_ms": 0.106456,
+      "last_fit_residual_ms": 1.309425
+    },
+    {
+      "name": "103 BPM",
+      "seq_range": [
+        831,
+        845
+      ],
+      "first_on_rel_s": 123.124,
+      "last_on_rel_s": 127.204,
+      "beats": 8,
+      "intervals": 7,
+      "fitted_period_ms": 582.975417,
+      "fitted_bpm": 102.9203,
+      "mean_consecutive_period_ms": 582.946857,
+      "sd_consecutive_period_ms": 0.32503,
+      "rms_phase_residual_ms": 0.218684,
+      "max_abs_phase_residual_ms": 0.465833,
+      "first_fit_residual_ms": 0.241833,
+      "last_fit_residual_ms": 0.041917
+    },
+    {
+      "name": "94 BPM",
+      "seq_range": [
+        853,
+        871
+      ],
+      "first_on_rel_s": 129.711,
+      "last_on_rel_s": 135.463,
+      "beats": 10,
+      "intervals": 9,
+      "fitted_period_ms": 639.031655,
+      "fitted_bpm": 93.8921,
+      "mean_consecutive_period_ms": 639.038111,
+      "sd_consecutive_period_ms": 0.340755,
+      "rms_phase_residual_ms": 0.171632,
+      "max_abs_phase_residual_ms": 0.285273,
+      "first_fit_residual_ms": 0.046345,
+      "last_fit_residual_ms": 0.104455
+    },
+    {
+      "name": "69 BPM",
+      "seq_range": [
+        883,
+        895
+      ],
+      "first_on_rel_s": 140.371,
+      "last_on_rel_s": 145.572,
+      "beats": 7,
+      "intervals": 6,
+      "fitted_period_ms": 866.979071,
+      "fitted_bpm": 69.2058,
+      "mean_consecutive_period_ms": 866.8925,
+      "sd_consecutive_period_ms": 0.399044,
+      "rms_phase_residual_ms": 0.248931,
+      "max_abs_phase_residual_ms": 0.408286,
+      "first_fit_residual_ms": 0.155643,
+      "last_fit_residual_ms": -0.363786
+    },
+    {
+      "name": "56 BPM",
+      "seq_range": [
+        907,
+        917
+      ],
+      "first_on_rel_s": 151.741,
+      "last_on_rel_s": 157.076,
+      "beats": 6,
+      "intervals": 5,
+      "fitted_period_ms": 1066.975429,
+      "fitted_bpm": 56.2337,
+      "mean_consecutive_period_ms": 1067.018,
+      "sd_consecutive_period_ms": 0.358035,
+      "rms_phase_residual_ms": 0.215955,
+      "max_abs_phase_residual_ms": 0.359381,
+      "first_fit_residual_ms": -0.017095,
+      "last_fit_residual_ms": 0.195762
+    },
+    {
+      "name": "165 BPM after edits",
+      "seq_range": [
+        939,
+        999
+      ],
+      "first_on_rel_s": 161.324,
+      "last_on_rel_s": 172.244,
+      "beats": 31,
+      "intervals": 30,
+      "fitted_period_ms": 363.992271,
+      "fitted_bpm": 164.8387,
+      "mean_consecutive_period_ms": 364.0017,
+      "sd_consecutive_period_ms": 0.365339,
+      "rms_phase_residual_ms": 0.252385,
+      "max_abs_phase_residual_ms": 0.49582,
+      "first_fit_residual_ms": 0.128091,
+      "last_fit_residual_ms": 0.410974
+    }
+  ],
+  "off_to_on_under_20ms": [
+    {
+      "on_sequence": 819,
+      "on_rel_s": 119.380853,
+      "preceding_dark_gap_ms": 8.029
+    },
+    {
+      "on_sequence": 821,
+      "on_rel_s": 119.959582,
+      "preceding_dark_gap_ms": 9.129
+    },
+    {
+      "on_sequence": 823,
+      "on_rel_s": 120.53825,
+      "preceding_dark_gap_ms": 7.189
+    },
+    {
+      "on_sequence": 849,
+      "on_rel_s": 128.130589,
+      "preceding_dark_gap_ms": 16.159
+    },
+    {
+      "on_sequence": 899,
+      "on_rel_s": 146.948061,
+      "preceding_dark_gap_ms": 1.87
+    },
+    {
+      "on_sequence": 919,
+      "on_rel_s": 157.559612,
+      "preceding_dark_gap_ms": 9.335
+    }
+  ],
+  "first_transition": {
+    "old_phase_last_on_sequence": 815,
+    "new_phase_first_on_sequence": 817,
+    "observed_on_to_on_ms": 322.836,
+    "old_fitted_period_ms": 545.000756,
+    "phase_discontinuity_vs_old_period_ms": -222.164756,
+    "cannot_infer_user_knob_exact_time": true
+  }
+}

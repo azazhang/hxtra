@@ -20,7 +20,8 @@ progress {width:100%;height:12px; margin:14px 0 6px}
 </style>
 </head>
 <body>
-<h1>METRO-LEDSYNC-R02C-HWFAIL02-SHARC-ONLY</h1>
+<h1>METRO-LEDSYNC-R02C-HWFAIL02-SHARC-ONLY — FAILED STARTUP</h1>
+<p class="bad" id="HWFAIL02_HARDWARE_FAILURE"><strong>STOPPED: DO NOT RUN THIS IMAGE AGAIN.</strong> This SHARC-only firmware froze the actual HX Stomp following nine successful RAM-region transfers, with USB device still enumerating but HX Edit SYN timing out. The unmodified-donor control booted normally. Power cycling the pedal returns to the installed HXtra v1.2.1. This page is retained as a diagnostic record only.</p>
 <p><strong>HWFAIL02: SHARC-only startup isolation.</strong> This image differs from the exact installed HXtra v1.2.1 only in its SHARC Entry 2 bootstream. The complete M4 application (Entry 0), UI settings, DSP Usage Display, USB Monitor and every other firmware entry remain byte-for-byte identical to the installed HXtra donor. The experimental R02C physical LED hook and command 0x50 are absent.</p>
 <p><strong>Firmware HXF SHA256:</strong> <code>3aa8d41b6d925272a00db2a16f2c112d1399f0adde70131ee3f78d47c09cf2ce</code>. Entry2 changes 11 sectors: a 15-instruction metronome probe in unused SHARC PM memory, one original metronome instruction branch and exactly equivalent initialization data. The donor's normal metronome free-running behavior remains since there is no M4 event marker. The RAM plan contains nine SDRAM transfer regions and one read-only original eMMC CRC check. Power-cycling restores permanently installed HXtra v1.2.1.</p>
 <p class="warn"><strong>Startup test only.</strong> The full R02C image previously froze; this single-layer test may also freeze. Observe whether its ordinary HXtra home screen appears and remains responsive. No physical BPM or metronome changes are needed for this test. Do not save presets or Global Settings. Report if the screen freezes, editor becomes unresponsive, or DSP usage percentages disappear.</p>
@@ -49,7 +50,7 @@ async function preload(){
  const total=regions.reduce((n,r)=>n+r.bytes.length,0);
  ready={plan:{regions,checks:manifest.checks},loader};
  show('Ready',`WebUSB available; ${regions.length} regions (${(total/1048576).toFixed(2)} MiB), ${manifest.checks.length} eMMC checks; RAM-only writes.`);
- el('run').disabled=false;
+ el('run').disabled=true; // HWFAIL02 physical startup freeze: disabled
  log('Verified SHARC-only RAM plan: Entry2 +72 bytes, 11 overlay sectors, 9 regions, writes=ram.\n');
  log('METRO-LEDSYNC-R02C-HWFAIL02-SHARC-ONLY | HXtra WebUSB | SHARC-only R02C startup isolation; user must confirm actual hardware boot\n');
 }
@@ -60,6 +61,7 @@ function ask(stage){
 }
 function unask(){el('next').style.display='none';el('next').onclick=null;}
 el('run').onclick=async()=>{
+ show('HALTED','HWFAIL02 froze on startup. Do not run it again.'); return;
  if(!ready||running)return;
  running=true;el('run').disabled=true;el('log').textContent='';el('progress').value=0;show('Starting RAM test','Select the HX Stomp from Chrome’s USB device chooser.');
  try{
@@ -72,7 +74,7 @@ el('run').onclick=async()=>{
  }catch(e){
   show('RAM run stopped',(e?.code?e.code+': ':'')+(e?.message||String(e)));
   log('\nERROR: '+(e?.code?e.code+': ':'')+(e?.stack||e?.message||String(e))+'\n');
- }finally{running=false;el('run').disabled=false;unask();}
+ }finally{running=false;el('run').disabled=true; // HWFAIL02 physical startup freeze: disabledunask();}
 };
 el('save').onclick=()=>{const blob=new Blob([`METRO-LEDSYNC-R02C-HWFAIL02-SHARC-ONLY WebUSB RAM diagnostic\n${new Date().toISOString()}\n${el('status').innerText}\n\n${el('log').textContent}`],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='METRO-LEDSYNC-R02C-HWFAIL02-SHARC-ONLY-WebUSB.log';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 preload().catch(e=>{show('Setup failed',e.message);log('ERROR: '+e.stack+'\n');});

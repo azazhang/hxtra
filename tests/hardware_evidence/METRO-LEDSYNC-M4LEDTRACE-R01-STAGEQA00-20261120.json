@@ -1,0 +1,19 @@
+{
+  "test_name": "METRO-LEDSYNC-M4LEDTRACE-R01-STAGEQA00",
+  "date_local": "2026-11-20",
+  "stage": "Ready",
+  "runDisabled": false,
+  "source": "read-only Mac mini Chrome DOM inspection plus hash verification",
+  "page": "http://localhost:8765/METRO-LEDSYNC-M4LEDTRACE-R01/?build=819343be",
+  "reported_details": "WebUSB available; 9 regions (1.00 MiB), 1 eMMC checks; RAM-only writes.",
+  "ram_plan_sha256": "0dae726091e84866c7ea9014560ab4e962978a0fb26def7e68b3eca2b08a9b79",
+  "candidate_hxf_sha256": "819343be4aa5cbd29b8e400941a1cca635e2ed9fa835d31b8b936337a6120d99",
+  "writes": "ram",
+  "overlay_sectors": 0,
+  "original_sharc_entry2_byte_identical": true,
+  "live_HX_Stomp_firmware_run_started": false,
+  "hardware_boot_verified": false,
+  "physical_light_audio_sync_verified": false,
+  "host_sampler_installed": true,
+  "result": "staged_preflight_only"
+}

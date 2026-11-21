@@ -1,0 +1,118 @@
+{
+  "variant": "METRO-LEDSYNC-R03C-HWGLITCH-REPAIR",
+  "hardware_test": "HWGOOD01",
+  "firmware_hxf_sha256": "42c7bf82a5b0ce478aeedd4d6b8ca27c30cc87680ca2a84473613759cf68ba8b",
+  "source_jsonl": "tests/hardware_evidence/METRO-LEDSYNC-R03C-HWGOOD01-LED-TO-M4TX-80SAMPLES-20261120.jsonl",
+  "source_sha256": "f725426c5425d859cdfcf6243744798c9b3af65c9c1794ca983b4382051a1b01",
+  "distinct_hardware_led_event_count": 23,
+  "raw_readonly_USB_0x50_samples": 80,
+  "host_monotonic_observation_span_seconds": 13.087202084,
+  "first_event_raw_u32": 2147484490,
+  "last_event_raw_u32": 2147484512,
+  "all_reported_M4_TX_pairs_consistent": true,
+  "all_reported_M4_TX_counts_current": true,
+  "M4_LED_command_to_first_M4_SPI_TX_callback_us": {
+    "per_distinct_event": [
+      344,
+      302,
+      183,
+      146,
+      165,
+      44,
+      305,
+      137,
+      130,
+      328,
+      401,
+      150,
+      164,
+      419,
+      135,
+      65,
+      130,
+      388,
+      39,
+      369,
+      409,
+      341,
+      88
+    ],
+    "min": 39,
+    "median": 165,
+    "mean": 225.30434782608697,
+    "population_std": 126.30137690137572,
+    "p05_linear_interpolated": 46.1,
+    "p95_linear_interpolated": 408.2,
+    "max": 419,
+    "count": 23
+  },
+  "M4_postfilter_LED_ON_to_ON_intervals_us": {
+    "values": [
+      600042,
+      600557,
+      600095,
+      600008,
+      600143,
+      599324,
+      600613,
+      600001,
+      599802,
+      599870,
+      599710,
+      599885,
+      599981,
+      602205,
+      598579,
+      599755,
+      600327,
+      599803,
+      599865,
+      599756,
+      599904,
+      601418
+    ],
+    "count": 22,
+    "median_us": 599942.5,
+    "median_equivalent_BPM": 100.00958425182414,
+    "min": 598579,
+    "max": 602205
+  },
+  "cumulative_interruptions_during_query": {
+    "SPI_tx_frames_skipped": {
+      "first": 16220,
+      "last": 16220,
+      "increase": 0
+    },
+    "SPI_tx_frames_no_TAP_or_LED_hidden": {
+      "first": 3848,
+      "last": 3848,
+      "increase": 0
+    },
+    "noTAP_frames_held_through_grace": {
+      "first": 0,
+      "last": 0,
+      "increase": 0
+    },
+    "noTAP_frames_sent_as_explicit_local_fallback": {
+      "first": 3848,
+      "last": 3848,
+      "increase": 0
+    },
+    "short_dark_reversals_filtered": {
+      "first": 16,
+      "last": 16,
+      "increase": 0
+    },
+    "slot8_Metronome_engage_transitions": {
+      "first": 0,
+      "last": 0,
+      "increase": 0
+    }
+  },
+  "timing_origin": "M4 internal post-filter FS3 LED driver request, BEFORE optical LED",
+  "timing_destination": "FIRST M4 SPI TX callback stamp with the event, BEFORE actual SPI physical transfer and SHARC consumption",
+  "physical_acoustic_click_latency_measured": false,
+  "optical_LED_latency_measured": false,
+  "audio_USB_capture_result": "all 8 HX Stomp and all 10 FLOW 8 input channels returned zero; no acoustic onset available",
+  "user_hardware_report": "R03C duplicate clicking resolved, requested major working version; perceptible optical-audio lag remains to be measured"
+}

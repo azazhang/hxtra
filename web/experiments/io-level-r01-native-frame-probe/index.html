@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IO-LEVEL-R01-NATIVE-RX-FRAME-PROBE | HXtra RAM diagnostic</title>
+<style>
+:root {font-family: -apple-system,BlinkMacSystemFont,Inter,system-ui,sans-serif;color-scheme: dark; background:#14171d;color:#e6eaf1}
+body {margin:0 auto;max-width:860px;padding:35px 26px 80px;line-height:1.55}
+h1 {font-size:1.65rem;margin:0 0 14px} h2 {font-size:1.15rem;margin:26px 0 6px}
+p {max-width:770px} code {background:#272d37;padding:2px 5px;border-radius:4px} small {color:#a9b6ca}
+button {cursor:pointer;background:#3883f5;color:#fff;border:0;border-radius:8px;padding:12px 17px;font-size:1rem;font-weight:600}
+button:disabled {background:#404b5d;color:#a6b0c1;cursor:default}
+button.secondary {background:#363e4d}
+#next {display:none; margin-left:8px} #stage {font-weight:600}
+#status {margin:20px 0;padding:12px 15px;border:1px solid #465064;border-radius:8px;background:#232833}
+#log {min-height:160px;max-height:440px;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#090e16;color:#a8e0b8;padding:16px;border-radius:8px;font:12px/1.55 Menlo,Consolas,monospace}
+.warn {color:#ffcb7b}.bad {color:#ff8181}.good {color:#85e3ad}
+progress {width:100%;height:12px; margin:14px 0 6px}
+</style>
+</head>
+<body>
+<h1>IO-LEVEL-R01-NATIVE-RX-FRAME-PROBE</h1>
+<p><strong>IO-LEVEL-R01: read-only capture of stock input/output meter messages.</strong>
+This RAM diagnostic extends the exact user-flashed R03C firmware without changing
+a single SHARC instruction, DSP audio model, DSP usage display, USB Monitor,
+existing GR meter, original R03C LED-synchronized click, preset or global setting.
+The stock SHARC Input block already runs native peak meter primitive
+<code>0x2390</code> and sends its measurement to the standard DSP event queue.
+This build records a complete, valid 256-word DSP-to-M4 receive frame exactly
+as the M4 sees it, via read-only HXtra editor command <code>0x4F</code>.</p>
+<p><strong>This first-stage prototype records the real data. It does not yet draw
+input/output level bars.</strong> Their message offsets and interpretation must
+be established from real frames before assigning peaks to the left/right bars.
+After RAM boot, the host can read frames with
+<code>tools/io_level_r01_native_frame_probe.py</code>. Querying command 0x4F
+only returns the last fixed snapshot then arms a one-shot capture of the next
+valid native frame. The stock GR receiver runs as before. No incoming DSP frame
+is modified, and no new DSP code or new screen widgets run.</p>
+<p><strong>Current installed firmware must be exactly R03C</strong> (the image
+verified in the HWFLASH01 post-update QA). SHA256:
+<code>42c7bf82a5b0ce478aeedd4d6b8ca27c30cc87680ca2a84473613759cf68ba8b</code>. R01 adds only two M4 hook edits and exactly
+2392 bytes
+to the existing M4 application image. All other <strong>14 archive entries</strong>,
+including the SHARC bootstream and output-writer/sidechain patches, remain
+byte-identical to the installed R03C. A static offline binary audit passed.</p>
+<p class="warn"><strong>Opt-in hardware test, RAM only.</strong> The plan sends
+nine RAM regions with <strong>zero permanent eMMC writes</strong> and
+<strong>zero new SHARC overlay sectors</strong>. Two read-only
+identity checks compare the installed SHARC partition header and its first
+1,023 full payload sectors against the exact frozen R03C image before RAM
+handoff. These checks cover R03C's distinct metronome DSP modifications. The current R03C
+persistent installation remains recoverable by a power cycle. The on-device
+behavior of this new M4 capture module has not yet been tested. If the device
+freezes, save the browser log and power-cycle to return to installed R03C.</p>
+<div id="status"><span id="stage">Preparing local files…</span><progress id="progress" max="100" value="0"></progress><div id="details"></div></div>
+<button id="run" disabled>Run IO-LEVEL-R01-NATIVE-RX-FRAME-PROBE from RAM</button>
+<button id="next" class="secondary">Continue — choose device</button>
+<button id="save" class="secondary">Save log</button>
+<h2>Diagnostic log</h2>
+<pre id="log"></pre>
+<script src="ramrun.js"></script>
+<script>
+'use strict';
+const el = id=>document.getElementById(id);
+let ready=null, running=false;
+const log=s=>{el('log').textContent += s; el('log').scrollTop=el('log').scrollHeight;};
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const show=(stage,details)=>{el('stage').textContent=stage;el('details').textContent=details||''};
+const loadBytes=async name=>{const r=await fetch(name,{cache:'no-store'});if(!r.ok) throw Error(`${name}: HTTP ${r.status}`);return new Uint8Array(await r.arrayBuffer());};
+async function preload(){
+ if(!window.isSecureContext || !navigator.usb || !window.RAMRUN) throw Error('WebUSB unavailable. Open this page in Google Chrome on the Mac mini using http://localhost:8765/');
+ const manifest=await (await fetch('regions/plan.json',{cache:'no-store'})).json();
+ if(manifest.regions?.length!==9||manifest.checks?.length!==2||manifest.summary?.writes!=='ram'||manifest.summary?.overlay_sectors!==0||manifest.summary?.runs!==0||manifest.summary?.changed?.length!==0) throw Error('Preflight: incorrect R01 RAM plan (requires 9 regions, 0 eMMC overlays, 2 identity checks, RAM-only writes)');
+ const [loader, ...data]=await Promise.all(['firmware-ramboot.dfu',...manifest.regions.map(r=>'regions/'+r.file)].map(loadBytes));
+ const regions=manifest.regions.map((r,i)=>({addr:r.addr,label:r.label,bytes:data[i]}));
+ if(loader.length!==4112||loader[0]!==0xda||loader[1]!==0xff) throw Error('Invalid firmware-ramboot.dfu');
+ const total=regions.reduce((n,r)=>n+r.bytes.length,0);
+ ready={plan:{regions,checks:manifest.checks},loader};
+ show('Ready',`WebUSB available; ${regions.length} regions (${(total/1048576).toFixed(2)} MiB), ${manifest.checks.length} eMMC checks; RAM-only writes.`);
+ el('run').disabled=false;
+ log('IO-LEVEL-R01 native meter event capture: 9 RAM regions, 0 changed eMMC sectors, 2 preflight eMMC identity CRC checks, writes=ram.\n');
+ log('IO-LEVEL-R01-NATIVE-RX-FRAME-PROBE | HXtra WebUSB | exact R03C donor, unchanged DSP, native RX capture via editor 0x4f\n');
+}
+function ask(stage){
+ show('Device selection required',`Click Continue and choose ${stage==='dfu'?'LPC (1fc9:000c)': 'RAM loader (1209:0001)'} in Chrome's USB device chooser.`);
+ el('next').style.display='inline-block';
+ return new Promise(resolve=>el('next').onclick=()=>{el('next').style.display='none';el('next').onclick=null;resolve();});
+}
+function unask(){el('next').style.display='none';el('next').onclick=null;}
+el('run').onclick=async()=>{
+ if(!ready||running)return;
+ running=true;el('run').disabled=true;el('log').textContent='';el('progress').value=0;show('Starting RAM test','Select the HX Stomp from Chrome’s USB device chooser.');
+ try{
+  await RAMRUN.run({usb:navigator.usb,plan:ready.plan,loader:ready.loader,log,
+   stage:s=>{show('Stage: '+s,'');el('progress').value=0;log('[stage] '+s+'\n');},
+   progress:(f,label)=>{el('progress').value=Math.min(100,Math.floor(f*100));el('details').textContent=`${label}: ${Math.round(f*100)}%`;},
+   ask,unask,sleep});
+  show('R01 native meter capture RAM handoff reported','Power-cycle to return to permanently installed R03C.');
+  log('\nWebUSB RAM handoff reported. Verify device operation; capture real DSP frames with tools/io_level_r01_native_frame_probe.py. No real input/output meter is drawn yet.\n');
+ }catch(e){
+  show('RAM run stopped',(e?.code?e.code+': ':'')+(e?.message||String(e)));
+  log('\nERROR: '+(e?.code?e.code+': ':'')+(e?.stack||e?.message||String(e))+'\n');
+ }finally{running=false;el('run').disabled=false;unask();}
+};
+el('save').onclick=()=>{const blob=new Blob([`IO-LEVEL-R01-NATIVE-RX-FRAME-PROBE WebUSB RAM diagnostic\n${new Date().toISOString()}\n${el('status').innerText}\n\n${el('log').textContent}`],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='IO-LEVEL-R01-NATIVE-RX-FRAME-PROBE-WebUSB.log';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+preload().catch(e=>{show('Setup failed',e.message);log('ERROR: '+e.stack+'\n');});
+</script>
+</body>
+</html>

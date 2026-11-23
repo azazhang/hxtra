@@ -80,3 +80,36 @@ cd "$HOME/Projects/hxtra-metronome-test"
 Then compare, by exact native object/parameter key, record counts and observed maxima while the metronome is audibly running and guitar input is active. Identify the **actual** input and output signal fields, including whether the audible metronome reaches any existing meter. Only then revise the Home rendering to use different correctly mapped, full-resolution data. If a native output source is truly unavailable, separately document that before proposing any additional SHARC code.
 
 **R04 is an experimental, user-triggered, RAM-only data diagnostic and is not approved for permanent updater flashing.**
+
+## R04 physical hardware observations — HW01 and HW02 (2026-11-23)
+
+**R04 was subsequently RAM-booted by the user.** The user confirmed that neither guitar nor metronome moved the two trial Home bars. The new R04 read-only editor command `0x13` responded successfully with the full **640-byte IOM4 event ledger**. The original R03C metronome command `0x50` also returned the exact R03C revision, showing original telemetry was preserved.
+
+### HW01 — 75 USB snapshots, 10.069 seconds
+
+- M4 RX frames: **135,062 → 158,042 (+22,980)**.
+- Native nonempty SPI messages: **11,268 → 11,803 (+535)**.
+- Native 44-word candidates/accepted: **290 → 320 (+30)**. Bar widths started and ended at **30px/30px**, with 16 changes in between.
+- R04 ledger stored **10 distinct (native-family, parameter-ID) keys**, with their full counts and observed min/max. Relevant keys:
+  - `0x0002002a / 1` and `/ 2`: both **+100 events** in the measurement window; the last transmitted level ranged **−69.624 to −12.115**; since-boot extremes **−70.915 to −9.837**. These events are **ignored by the R03 trial bar logic**.
+  - `0x00020000 / 2`: +101 events, last values **−70.168 to −68.472**; its similar-key `/5` returned the same baseline; originally selected for the stationary trial bar.
+  - `0x00020000 / 1`: +101 events, last values **−82.283 to −81.054**.
+  - `0x00020000 / 3, / 4, / 6`: exactly **−120.0** in this window.
+  - `0x00020002 / 3`: +202 events, last values **−86.683 to −85.195**.
+  - `0x0002002e / 1`: +104 events, last values **−1.0**; it also had a previously observed +44.983 maximum, demonstrating that generic native floats must not all be interpreted as sound levels.
+- The exact `0x0002002a / 1` and `/2` values were identical on every inspected sample and repeatedly rose to about **−12.3** at a roughly 0.53-second cadence; other native groups did not mirror this pulse.
+- Min/max figures are cumulative *since R04 RAM boot*; **last-value ranges** above are computed solely within the HW01 measurement window, avoiding mistaken attribution of earlier extrema to guitar playing at a specific time.
+
+### HW02 — synchronous TAP and native-level event correlation
+
+A distinct **120-sample, 15.83-second read-only capture** alternated native event ledger command `0x13` with R03C TAP diagnostic `0x50` in the *same host USB session*. The R03C metronome-active flag was true in every sample. The TAP LED-on event counter advanced by **29 beats** (392 to 421). Beat intervals observed via USB were predominantly **0.528–0.537 s**; rare approximately **0.665 s** gaps reflect the host's sampling point relative to transitions.
+
+- Native `0x0002002a /1` last-value ranged **−70.78 to −12.11 dB-like units**. It was greater than −30 in 27 of 120 snapshots, forming **24 distinct visible pulse runs**.
+- The native pulses aligned with TAP LED-on events at the same sample or at the immediately following sample. Examples: TAP count 393 at **t=0.397s**, level **−12.12**; count 394 at **t=0.929s**, **−12.29**; count 395 at **t=1.462s**, **−12.30**; count 403 at **t=5.856s**, **−12.30**; count 417 at **t=13.439s**, **−12.12**. Unobserved short pulses at a few LED events are explained by 0.133s host polling and 0.1s native meter-report cadence.
+- Simultaneously the `0x00020000 /2` record stayed between **−70.34 and −68.59** and the `0x00020002 /3` record stayed between **−88.42 and −86.72**.
+
+**Interpretation supported by live evidence:** `0x0002002a /1` and `/2` carry a stereo-identical metronome-responsive peak signal. The current R03/R04 bars are connected to an unrelated/sluggish family `0x00020000`, so neither bar reflects the metronome. The evidence strongly supports downstream-of-metronome event activity, but it has **not** independently proven whether that event represents physical Main, Send, USB Out or a per-block meter. No physical guitar-only controlled comparison has yet been captured, so do not assert that `0x00020000` is the Guitar Input level.
+
+**Next discriminating test:** With a read-only baseline saved, the user temporarily bypasses the metronome and plays guitar during a synchronized ~10–20-second R04 `0x13` capture. Compare each keyed native last-value time series, including `0x00020000 /1..6`, `0x0002002a /1,/2`, and `0x00020002 /3`. Re-engage metronome afterward. Only after source assignment is verified should a subsequent RAM prototype alter two Home bar inputs or receive permanent-flash consideration.
+
+Raw full per-poll JSONL captures remain outside the public Git repository in private Mac mini `/tmp` files to avoid uploading any native preset data.

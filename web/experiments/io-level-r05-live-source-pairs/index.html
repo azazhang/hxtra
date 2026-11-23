@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IO-LEVEL-R05-LIVE-INPUT-OUTPUT-CANDIDATE-BARS | HXtra RAM diagnostic</title>
+<style>
+:root {font-family: -apple-system,BlinkMacSystemFont,Inter,system-ui,sans-serif;color-scheme: dark; background:#14171d;color:#e6eaf1}
+body {margin:0 auto;max-width:860px;padding:35px 26px 80px;line-height:1.55}
+h1 {font-size:1.65rem;margin:0 0 14px} h2 {font-size:1.15rem;margin:26px 0 6px}
+p {max-width:770px} code {background:#272d37;padding:2px 5px;border-radius:4px} small {color:#a9b6ca}
+button {cursor:pointer;background:#3883f5;color:#fff;border:0;border-radius:8px;padding:12px 17px;font-size:1rem;font-weight:600}
+button:disabled {background:#404b5d;color:#a6b0c1;cursor:default}
+button.secondary {background:#363e4d}
+#next {display:none; margin-left:8px} #stage {font-weight:600}
+#status {margin:20px 0;padding:12px 15px;border:1px solid #465064;border-radius:8px;background:#232833}
+#log {min-height:160px;max-height:440px;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#090e16;color:#a8e0b8;padding:16px;border-radius:8px;font:12px/1.55 Menlo,Consolas,monospace}
+.warn {color:#ffcb7b}.bad {color:#ff8181}.good {color:#85e3ad}
+progress {width:100%;height:12px; margin:14px 0 6px}
+</style>
+</head>
+<body>
+<h1>IO-LEVEL-R05-LIVE-INPUT-OUTPUT-CANDIDATE-BARS</h1>
+<p><strong>IO-LEVEL-R05: two independently responsive native meter candidate bars.</strong>
+R04's physical guitar-only capture with Metronome block bypassed showed a
+strong guitar-responsive native value at <code>0x00020002 / parameter 3</code>,
+while both guitar and metronome activity strongly changed another value at
+<code>0x0002002a / parameter 1</code>. The two records varied independently
+while the prior R02/R03/R04 trial bars read the wrong native family.</p>
+<p><strong>Left green bar:</strong> provisional Input candidate
+<code>0x00020002 / 3</code> (upstream guitar-responsive; physical input jack
+identity not yet proven). <strong>Right blue bar:</strong> provisional Output
+candidate <code>0x0002002a / 1</code> (tracks guitar and pulses aligned with
+TAP/metronome; Main/Send/USB destination not yet proven). Each bar is
+132 × 5 pixels at x24..155 or x164..295, y113..117. Real native values
+are mapped over −90 to 0 dB-like units at approximately 0.68 dB/pixel.
+Updates are independent for each source, with up to ~23 Home refreshes/sec,
+and a two-second stale expiry per bar if its native source stops reporting.
+Neither value is currently calibrated against external audio hardware.</p>
+<p><strong>The existing native event ledger is preserved.</strong> Read-only
+editor command <code>0x13</code> reports 24 keyed object/parameter rows with
+last value, min, max and count in exactly 640 bytes. The R01 read-only raw
+capture command <code>0x4F</code> and R03C metronome command
+<code>0x50</code> are unchanged. The 44-word native meter packet is still
+counted and recorded, but its wrong-family values are excluded from the
+new two-bar display. No new SHARC code or DSP side processing is added.</p>
+<p>Relative to the physically booted R01 M4 application, this R05 build adds
+<strong>2612 bytes</strong> at three hook sites
+(RX callback, Home paint callback, read-only editor registration). All 14
+non-M4 archive entries are identical to the installed R03C image
+SHA256 <code>42c7bf82a5b0ce478aeedd4d6b8ca27c30cc87680ca2a84473613759cf68ba8b</code>. R05 HXF SHA256:
+<code>3eef769a0457cfa1fa4d089a92b0ebab242b0570977d94c13fb155276243112a</code>. Global settings, presets,
+DSP Usage %, gain-reduction meter, USB Monitor and metronome code are
+preserved in the candidate image.</p>
+<p class="warn"><strong>Opt-in RAM-only evaluation; do not flash with
+Line 6 Updater.</strong> First power-cycle out of the currently running R04
+RAM trial to the permanently installed R03C, then Run from Chrome WebUSB.
+Preflight checks two read-only eMMC reference CRCs, stages nine RAM regions,
+performs zero permanent eMMC writes and no eMMC overlay. Check that both
+bars move independently while playing; with the guitar stopped, the
+Output candidate should pulse with the metronome while the Input candidate
+remains near baseline. These behaviors are physical test targets; R05
+has passed only offline validation. If the device freezes, save the
+Chrome log and power-cycle to return to permanent R03C.</p>
+<div id="status"><span id="stage">Preparing local files…</span><progress id="progress" max="100" value="0"></progress><div id="details"></div></div>
+<button id="run" disabled>Run IO-LEVEL-R05-LIVE-INPUT-OUTPUT-CANDIDATE-BARS from RAM</button>
+<button id="next" class="secondary">Continue — choose device</button>
+<button id="save" class="secondary">Save log</button>
+<h2>Diagnostic log</h2>
+<pre id="log"></pre>
+<script src="ramrun.js"></script>
+<script>
+'use strict';
+const el = id=>document.getElementById(id);
+let ready=null, running=false;
+const log=s=>{el('log').textContent += s; el('log').scrollTop=el('log').scrollHeight;};
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const show=(stage,details)=>{el('stage').textContent=stage;el('details').textContent=details||''};
+const loadBytes=async name=>{const r=await fetch(name,{cache:'no-store'});if(!r.ok) throw Error(`${name}: HTTP ${r.status}`);return new Uint8Array(await r.arrayBuffer());};
+async function preload(){
+ if(!window.isSecureContext || !navigator.usb || !window.RAMRUN) throw Error('WebUSB unavailable. Open this page in Google Chrome on the Mac mini using http://localhost:8765/');
+ const manifest=await (await fetch('regions/plan.json',{cache:'no-store'})).json();
+ if(manifest.regions?.length!==9||manifest.checks?.length!==2||manifest.summary?.writes!=='ram'||manifest.summary?.overlay_sectors!==0||manifest.summary?.runs!==0||manifest.summary?.changed?.length!==0) throw Error('Preflight: incorrect R05 RAM plan (requires 9 regions, 0 eMMC overlays, 2 identity checks, RAM-only writes)');
+ const [loader, ...data]=await Promise.all(['firmware-ramboot.dfu',...manifest.regions.map(r=>'regions/'+r.file)].map(loadBytes));
+ const regions=manifest.regions.map((r,i)=>({addr:r.addr,label:r.label,bytes:data[i]}));
+ if(loader.length!==4112||loader[0]!==0xda||loader[1]!==0xff) throw Error('Invalid firmware-ramboot.dfu');
+ const total=regions.reduce((n,r)=>n+r.bytes.length,0);
+ ready={plan:{regions,checks:manifest.checks},loader};
+ show('Ready',`WebUSB available; ${regions.length} regions (${(total/1048576).toFixed(2)} MiB), ${manifest.checks.length} eMMC checks; RAM-only writes.`);
+ el('run').disabled=false;
+ log('IO-LEVEL-R05 dual live native-key bar preflight: 9 RAM regions, 0 changed eMMC sectors, 2 preflight eMMC identity CRC checks, writes=ram.\n');
+ log('IO-LEVEL-R05-LIVE-INPUT-OUTPUT-CANDIDATE-BARS | HXtra WebUSB | two separately selected 132px real native event bars; 0x13 rolling ledger; unchanged SHARC\n');
+}
+function ask(stage){
+ show('Device selection required',`Click Continue and choose ${stage==='dfu'?'LPC (1fc9:000c)': 'RAM loader (1209:0001)'} in Chrome's USB device chooser.`);
+ el('next').style.display='inline-block';
+ return new Promise(resolve=>el('next').onclick=()=>{el('next').style.display='none';el('next').onclick=null;resolve();});
+}
+function unask(){el('next').style.display='none';el('next').onclick=null;}
+el('run').onclick=async()=>{
+ if(!ready||running)return;
+ running=true;el('run').disabled=true;el('log').textContent='';el('progress').value=0;show('Starting RAM test','Select the HX Stomp from Chrome’s USB device chooser.');
+ try{
+  await RAMRUN.run({usb:navigator.usb,plan:ready.plan,loader:ready.loader,log,
+   stage:s=>{show('Stage: '+s,'');el('progress').value=0;log('[stage] '+s+'\n');},
+   progress:(f,label)=>{el('progress').value=Math.min(100,Math.floor(f*100));el('details').textContent=`${label}: ${Math.round(f*100)}%`;},
+   ask,unask,sleep});
+  show('R05 dual live native candidate bar RAM handoff reported','Power-cycle to return to permanently installed R03C.');
+  log('\nWebUSB RAM handoff reported. Play guitar and engage metronome to verify separate left/right live native record sources. Read-only editor 0x13 24-key ledger retained. Do NOT flash.\n');
+ }catch(e){
+  show('RAM run stopped',(e?.code?e.code+': ':'')+(e?.message||String(e)));
+  log('\nERROR: '+(e?.code?e.code+': ':'')+(e?.stack||e?.message||String(e))+'\n');
+ }finally{running=false;el('run').disabled=false;unask();}
+};
+el('save').onclick=()=>{const blob=new Blob([`IO-LEVEL-R05-LIVE-INPUT-OUTPUT-CANDIDATE-BARS WebUSB RAM diagnostic\n${new Date().toISOString()}\n${el('status').innerText}\n\n${el('log').textContent}`],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='IO-LEVEL-R05-LIVE-INPUT-OUTPUT-CANDIDATE-BARS-WebUSB.log';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+preload().catch(e=>{show('Setup failed',e.message);log('ERROR: '+e.stack+'\n');});
+</script>
+</body>
+</html>

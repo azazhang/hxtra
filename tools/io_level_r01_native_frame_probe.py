@@ -11,6 +11,7 @@ No pedal reboot, RAM handoff, image write, or preset change is attempted.
 from __future__ import annotations
 import argparse,contextlib,json,struct,time
 from pathlib import Path
+from io_level_native_protocol import parse_frame
 
 NAME='IO-LEVEL-R01-NATIVE-RX-FRAME-PROBE'
 CMD=0x4f
@@ -33,10 +34,10 @@ def decode(data):
       'complete':seq>0 and count>=seq,
       'M4_RX_MAGIC_valid':w[0]==RX_MAGIC,
       'M4_RX_TRAILER_valid':w[255]==RX_TRAILER,
-      'frame_payload_words':w[1] & 0xffff,
+      **parse_frame(w),
       'r03c_rx_frame_gr_marker':w[200]==0xf00d600d,
       'words_M4_raw_halfword_swapped':list(w),
-      'native_event_bytes_decoded':False,
+      'native_event_bytes_decoded':True,
       'input_output_level_calibrated':False,
     }
 

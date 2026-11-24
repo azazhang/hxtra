@@ -8,6 +8,14 @@ A working HX Stomp implementation based on HXtra v1.2.1 and the R03C metronome s
 - Separate Edit-view position to leave the stock divider, DSP Usage numbers and gain-reduction drawing space available.
 - Actual hardware RAM tests followed by a successful permanent installation. 344 selected regression tests passed.
 
+## Hardware screenshots
+
+Actual 320 × 240 LCD framebuffer captures from the HX Stomp while playing, using the upstream HXtra screen mirror in a temporary RAM-only build with the exact R12 meter rendering and DSP code. Input is on the left, Main output on the right.
+
+| Footswitch view | Signal Chain view |
+| --- | --- |
+| ![Footswitch view](io-level-meters/footswitch.png) | ![Signal Chain view](io-level-meters/signal-chain.png) |
+
 ## Source entry points
 
 - [DSP peak acquisition and transport](../../../src/sharc/io_level_r09_direct_peaks.asm)

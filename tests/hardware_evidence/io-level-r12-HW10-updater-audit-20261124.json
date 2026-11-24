@@ -1,0 +1,51 @@
+{
+  "HXF_SHA256": "f0e94436fa18d3bb1b9fc6f04687a07ebfaa3e804225c5bf2c3a1e5c621064c9",
+  "HXF_bytes": 45862130,
+  "L6IA_SHA256": "5cee9d0d312bdac604ea771e553da217aa7d17b017bf72d10e8987d34b451fb0",
+  "Updater_trailer_bytes": 101392,
+  "Updater_trailer_identical": true,
+  "HEAD_identity_identical": true,
+  "modified_entries_vs_installed_R03C": [
+    0,
+    2
+  ],
+  "bootloader_and_12_other_entries_identical": true,
+  "entry0_bytes": 1038292,
+  "entry0_partition_limit": 16776704,
+  "entry2_bytes": 524212,
+  "R09_physically_booted_SHARC_identical": true,
+  "R11_other_14_entries_identical": true,
+  "application_crc_valid": true,
+  "archive_crcs_valid": true,
+  "RAM_plan_SHA256": "f66148713ff0dc5f0706f3ee5dd1880eb54ae5a2e3928993b3b53506b6ef257f",
+  "app_segments": [
+    [
+      "0x10000000",
+      228
+    ],
+    [
+      "0x100000f0",
+      13456
+    ],
+    [
+      "0x10080000",
+      4100
+    ],
+    [
+      "0x20000000",
+      49648
+    ],
+    [
+      "0x28000000",
+      7139
+    ],
+    [
+      "0x28001be4",
+      99424
+    ],
+    [
+      "0x28d8fa80",
+      864160
+    ]
+  ]
+}

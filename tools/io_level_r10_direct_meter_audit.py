@@ -20,13 +20,18 @@ def summarize(rows):
     d={k:delta(a,b,k) for k in fields};d['duration_s']=duration;d['DSP_windows_per_second']=d['window']/duration;d['sample_rate_estimate']=d['window']*1024/duration
     d['coverage_fraction']=d['accepted']/d['window'] if d['window'] else None
     d['input_calls_per_window_last']=b['input_calls']
+    # Attribute each counter increment to its current observed TAP label.
+    # The first row with the new TAP label can already contain that click;
+    # subtract from the immediately preceding row, not the first row.
+    # Host observations remain asynchronous, not sample-aligned.
     changes=[i for i in range(1,len(rows)) if rows[i]['led_count']!=rows[i-1]['led_count']]
     windows=[]
     for i,j in zip(changes,changes[1:]):
-        f,l=rows[i]['direct'],rows[j]['direct']
-        windows.append({'tap':rows[i]['led_count'],'native_detected':any(x['native_out_db']>-30 for x in rows[i:j]),'DSP_hot_windows':delta(f,l,'dsp_hot'),'M4_hot_windows':delta(f,l,'m4_hot'),'hot_paints':delta(f,l,'hot_paints'),'DSP_windows':delta(f,l,'window'),'missing_windows':delta(f,l,'gaps')})
+        f,l=rows[i-1]['direct'],rows[j-1]['direct']
+        painted=[(x['direct']['painted']>>8)&255 for x in rows[i:j]]
+        windows.append({'tap':rows[i]['led_count'],'native_detected':any(x['native_out_db']>-30 for x in rows[i:j]),'DSP_hot_windows':delta(f,l,'dsp_hot'),'M4_hot_windows':delta(f,l,'m4_hot'),'hot_paints':delta(f,l,'hot_paints'),'DSP_windows':delta(f,l,'window'),'missing_windows':delta(f,l,'gaps'),'painted_min_segments':min(painted),'painted_max_segments':max(painted),'distinct_painted_pulse':min(painted)==0 and max(painted)>=6})
     d['complete_tap_intervals']=len(windows)
-    for k in ('native_detected','DSP_hot_windows','M4_hot_windows','hot_paints'):
+    for k in ('native_detected','DSP_hot_windows','M4_hot_windows','hot_paints','distinct_painted_pulse'):
         d['tap_intervals_'+k]=sum(w[k]>0 for w in windows)
     d['per_beat']=windows
     return d

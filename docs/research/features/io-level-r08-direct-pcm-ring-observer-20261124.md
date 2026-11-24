@@ -24,3 +24,7 @@ Reported R07 HW06 reproduced the native report loss: 37/42 high native/packed-ba
 ## Physical acceptance
 
 Open `http://localhost:8765/IO-LEVEL-R08-DIRECT-PCM-RING-OBSERVER/` in Chrome on Mac mini after power cycle to permanent R03C; load RAM only. Leave guitar silent and metronome engaged; compare 800+ synchronized 0x1d/0x13/0x50 snapshots. Require IOR8 response, advancing producer and validated sample count, high coverage near nominal 48 kHz before attributing absent PCM peaks. Compare direct output high-sample counts in native-missed beat windows, inspect timing/boundary uncertainty and threshold sensitivity. If the PCM ring is inactive without a host audio stream, first determine the stock USB state; do not change user's global or preset settings. If observer significantly affects audio, freezes, or has insufficient ring coverage, stop and return to permanent R03C. Only after physical validation should the Home meters be driven by this source. R08 itself does not claim the dropped clicks fixed.
+
+## HW07 conclusion (2026-11-23)
+
+800 read-only IOR8/native/TAP samples verified R08 running. Over 23.1577 s, 51,888 observer callbacks saw a stationary PCM producer count/offset of zero in standalone operation. The USB PCM ring therefore cannot supply a standalone meter under this configuration. R09 instead samples the always-active SHARC graph paths and retains the native ledger solely as a comparator.

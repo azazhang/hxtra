@@ -1,0 +1,9 @@
+# R11: uniform 5 dBFS display scale
+
+User requested removal of the extra nonuniform compression of low dBFS levels. Both meters now use the same 16 thresholds, -75, -70, ... -5, 0 dBFS. Threshold amplitudes are IEEE754 float32 nearest values of 10^(dBFS/20); no gain, normalization, signal routing, acquisition, or hold/decay changes. The 0 dBFS threshold remains 1.0. The read-only hot-paint diagnostic compares against 10 segments instead of 6 to retain its -30 dBFS meaning; runtime identity is IORB. Exact physical R10 HXF donor SHA256 45f44a7e8a2ea442beff5b4776f25eb4264cdf37e67e9ec9871b0882a75b82d4. Only 61 bytes within the M4 module differ (59 threshold bytes, one diagnostic comparison byte, one revision byte), plus recalculated application/archive integrity fields. All 14 other archive entries byte-identical to R10 including its physically verified SHARC; no changes to DSP Usage or metronome code. 
+
+21 targeted assembled-code tests passed, including all 16 threshold boundaries and adjacent float bit patterns, independent input/output behavior, exact binary delta, correct -30 dBFS paint-counter semantics, and real captured HW08 packet replay with identical receiver counters. A real captured peak about -19.3 dBFS produces 12 LEDs, versus eight in R10. Quiet input in the HW08 fixture remains below the new display floor. R11 is offline validated; the new display scale has not yet been observed on the physical unit.
+
+Candidate HXF SHA256 fccda1d30e7f7ef5256ea00985d513fda04b21b551e97e1d110d448d26b86bce. RAM plan SHA256 cf5f3d6bb48550cd95a8e7c9ec167cfa429d092db1de650ac00852adfc13a556; all 1025 SHARC sectors verified, same six RAM overlay sectors as R10. All deployed files hash-verified on Mac mini; page and plan HTTP 200. User-initiated RAM-only load, no permanent writes.
+
+http://localhost:8765/IO-LEVEL-R11-UNIFORM-5DB-PEAK-METERS/

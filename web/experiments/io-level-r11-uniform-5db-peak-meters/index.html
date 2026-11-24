@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IO-LEVEL-R11-UNIFORM-5DB-PEAK-METERS | HXtra RAM diagnostic</title>
+<style>
+:root {font-family: -apple-system,BlinkMacSystemFont,Inter,system-ui,sans-serif;color-scheme: dark; background:#14171d;color:#e6eaf1}
+body {margin:0 auto;max-width:860px;padding:35px 26px 80px;line-height:1.55}
+h1 {font-size:1.65rem;margin:0 0 14px} h2 {font-size:1.15rem;margin:26px 0 6px}
+p {max-width:770px} code {background:#272d37;padding:2px 5px;border-radius:4px} small {color:#a9b6ca}
+button {cursor:pointer;background:#3883f5;color:#fff;border:0;border-radius:8px;padding:12px 17px;font-size:1rem;font-weight:600}
+button:disabled {background:#404b5d;color:#a6b0c1;cursor:default}
+button.secondary {background:#363e4d}
+#next {display:none; margin-left:8px} #stage {font-weight:600}
+#status {margin:20px 0;padding:12px 15px;border:1px solid #465064;border-radius:8px;background:#232833}
+#log {min-height:160px;max-height:440px;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#090e16;color:#a8e0b8;padding:16px;border-radius:8px;font:12px/1.55 Menlo,Consolas,monospace}
+.warn {color:#ffcb7b}.bad {color:#ff8181}.good {color:#85e3ad}
+progress {width:100%;height:12px; margin:14px 0 6px}
+</style>
+</head>
+<body>
+<h1>IO-LEVEL-R11-UNIFORM-5DB-PEAK-METERS</h1>
+<p><strong>R11: uniform 5 dB Input and Main Output peak meters.</strong> R11 uses 16 evenly spaced thresholds from -75 to 0 dBFS for both channels. R10 measurement and receiver code are preserved. Actual audio samples are measured in 1024-sample windows inside the original input-sidechain and Main output writer paths. The DSP publishes checksum-protected sequence-tagged peak values. The M4 performs independent peak holds, bounded display decay, and validates the measurement source. The original native meter ledger remains available solely for comparison.</p>
+<p>The exact R03C donor is preserved except two existing SHARC hook instructions, added code in unused Block 3, equivalent zero initialization, and three M4 hook sites plus added code. The M0, metronome, original Home/GR path, NAM allocation and other archive entries are preserved. The SHARC partition remains 524212 bytes.</p>
+<p>R03C: <code>42c7bf82a5b0ce478aeedd4d6b8ca27c30cc87680ca2a84473613759cf68ba8b</code><br>Candidate: <code>fccda1d30e7f7ef5256ea00985d513fda04b21b551e97e1d110d448d26b86bce</code></p>
+<p class="warn"><strong>RAM only. Never install using Line 6 Updater.</strong> Power-cycle to the installed R03C before running. This plan verifies the installed SHARC CRCs and uses RAM-only sector redirection. R10 measurement and receiver were physically verified in HW09. R11 preserves the exact DSP binary and receiver logic; only thresholds, diagnostic paint threshold and revision signature change. Power-cycle to revert.</p>
+<div id="status"><span id="stage">Preparing local files…</span><progress id="progress" max="100" value="0"></progress><div id="details"></div></div>
+<button id="run" disabled>Run IO-LEVEL-R11-UNIFORM-5DB-PEAK-METERS from RAM</button>
+<button id="next" class="secondary">Continue — choose device</button>
+<button id="save" class="secondary">Save log</button>
+<h2>Diagnostic log</h2>
+<pre id="log"></pre>
+<script src="ramrun.js"></script>
+<script>
+'use strict';
+const el = id=>document.getElementById(id);
+let ready=null, running=false;
+const log=s=>{el('log').textContent += s; el('log').scrollTop=el('log').scrollHeight;};
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const show=(stage,details)=>{el('stage').textContent=stage;el('details').textContent=details||''};
+const loadBytes=async name=>{const r=await fetch(name,{cache:'no-store'});if(!r.ok) throw Error(`${name}: HTTP ${r.status}`);return new Uint8Array(await r.arrayBuffer());};
+async function preload(){
+ if(!window.isSecureContext || !navigator.usb || !window.RAMRUN) throw Error('WebUSB unavailable. Open this page in Google Chrome on the Mac mini using http://localhost:8765/');
+ const manifest=await (await fetch('regions/plan.json',{cache:'no-store'})).json();
+ if(manifest.regions?.length!==9||manifest.checks?.length!==2||manifest.summary?.writes!=='ram'||manifest.summary?.overlay_sectors!==6||manifest.summary?.runs!==4||JSON.stringify(manifest.summary?.changed)!=='[[2,524212,524212,5]]') throw Error('Preflight: incorrect R11 RAM plan');
+ const [loader, ...data]=await Promise.all(['firmware-ramboot.dfu',...manifest.regions.map(r=>'regions/'+r.file)].map(loadBytes));
+ const regions=manifest.regions.map((r,i)=>({addr:r.addr,label:r.label,bytes:data[i]}));
+ if(loader.length!==4112||loader[0]!==0xda||loader[1]!==0xff) throw Error('Invalid firmware-ramboot.dfu');
+ const total=regions.reduce((n,r)=>n+r.bytes.length,0);
+ ready={plan:{regions,checks:manifest.checks},loader};
+ show('Ready',`WebUSB available; ${regions.length} regions (${(total/1048576).toFixed(2)} MiB), ${manifest.checks.length} eMMC checks; RAM-only writes.`);
+ el('run').disabled=false;
+ log('R11 direct peaks: 9 RAM regions, 6 RAM-redirected SHARC sectors, 2 preflight eMMC identity CRC checks, writes=ram.\n');
+ log('IO-LEVEL-R11-UNIFORM-5DB-PEAK-METERS | HXtra WebUSB | exact R03C donor, direct SHARC peak windows, IORB read-only diagnostic via 0x1d\n');
+}
+function ask(stage){
+ show('Device selection required',`Click Continue and choose ${stage==='dfu'?'LPC (1fc9:000c)': 'RAM loader (1209:0001)'} in Chrome's USB device chooser.`);
+ el('next').style.display='inline-block';
+ return new Promise(resolve=>el('next').onclick=()=>{el('next').style.display='none';el('next').onclick=null;resolve();});
+}
+function unask(){el('next').style.display='none';el('next').onclick=null;}
+el('run').onclick=async()=>{
+ if(!ready||running)return;
+ running=true;el('run').disabled=true;el('log').textContent='';el('progress').value=0;show('Starting RAM test','Select the HX Stomp from Chrome’s USB device chooser.');
+ try{
+  await RAMRUN.run({usb:navigator.usb,plan:ready.plan,loader:ready.loader,log,
+   stage:s=>{show('Stage: '+s,'');el('progress').value=0;log('[stage] '+s+'\n');},
+   progress:(f,label)=>{el('progress').value=Math.min(100,Math.floor(f*100));el('details').textContent=`${label}: ${Math.round(f*100)}%`;},
+   ask,unask,sleep});
+  show('R11 direct meter RAM handoff reported','Power-cycle to return to permanently installed R03C.');
+  log('\nRAM handoff reported. R11 direct meter is ready for the read-only automated telemetry audit.\n');
+ }catch(e){
+  show('RAM run stopped',(e?.code?e.code+': ':'')+(e?.message||String(e)));
+  log('\nERROR: '+(e?.code?e.code+': ':'')+(e?.stack||e?.message||String(e))+'\n');
+ }finally{running=false;el('run').disabled=false;unask();}
+};
+el('save').onclick=()=>{const blob=new Blob([`IO-LEVEL-R11-UNIFORM-5DB-PEAK-METERS WebUSB RAM diagnostic\n${new Date().toISOString()}\n${el('status').innerText}\n\n${el('log').textContent}`],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='IO-LEVEL-R11-UNIFORM-5DB-PEAK-METERS-WebUSB.log';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+preload().catch(e=>{show('Setup failed',e.message);log('ERROR: '+e.stack+'\n');});
+</script>
+</body>
+</html>

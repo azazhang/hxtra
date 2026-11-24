@@ -1,0 +1,17 @@
+# R07 native peak publication retention (HW05 follow-up)
+
+R06 withdrawn after real hardware regression. In 200 observations over 11.25s with the metronome bypassed, native left width was always 0, right 23–28; visual left/right exceeded the valid 132px bound in 95/98 snapshots respectively. Home callback rate 62.22Hz, own redraw requests 22.67Hz. Unsigned release subtraction could underflow and contaminate both packed channels; independent drawing bounds were also missing. The Mac mini R06 browser page was disabled. Corrected R06 source is retained offline only; it is NOT used by R07 and no corrected R06 image has been staged.
+
+## Root-cause investigation
+
+Exact frozen R03C SHARC meter primitive 0x2390 at PM 0x8da6a accumulates peak amplitudes and publishes via 0x8cbb8. The enqueue routine returns -1 when its ring is full, but the original meter clears PM(0,I8) unconditionally. Actual SHARC instruction simulation reproduces loss and verifies retaining the maximum across rejected reports and publishing it upon subsequent queue availability. An earlier failing single-sample test was caused by omitted circular-buffer base B1 in the fixture, not an established stock acquisition defect. Corrected tests cover all 16 positions, both polarities, circular mode, full/successful/non-reporting paths, repeated rejection and random normal path equivalence. No additional sample acquisition issue established.
+
+The queue-full mechanism is a demonstrated stock code defect, not yet a proven explanation for the physical R05 missed clicks. The native 0x0002002a/1 event's exact association with this meter primitive remains unconfirmed. The proposed repair does not alter cadence, does not prevent multiple peaks from merging when congestion spans multiple beats, and does not synthesize clicks. The independent USB audio capture control failed because microphone permission was denied for the remote terminal. No preset settings were changed. To validate on hardware, compare R07's native peak vs TAP ledger across multiple stationary BPM windows and compare with R05 baseline (HW04 78/89 intervals high); look for delayed peaks as well as misses, and confirm original audio/UI features. If unsuccessful, trace the exact native source producer or obtain direct audio-window peaks.
+
+## Exact R07 candidate
+
+- HXF SHA256 0470cd933fde30aa772d1ab9eb70fe82bc5cce5699de5977099eed8c8359bcfa.
+- Pinned R05 M4 byte-identical; only SHARC Entry2 differs from R05. Replaced seven PM slots 0x8da7e–0x8da84 in existing LDR record 6. Same instruction count, same 201 records and same 524212-byte Entry2. One genuine changed payload sector (79). Other 13 archive entries identical to frozen R03C; metronome kernel untouched.
+- RAM plan SHA256 a6628fbd2c965e1c8cc6c34b4f1cef971b89cec835a871b916b2695255c3bd65. Two RAM-redirected sectors (header 0x8802 plus payload sector 79), two donor read-only identity CRCs, nine regions. Complete defined SHARC partition reconstructed and checked. Zero permanent writes.
+- 136 targeted tests passed, including R07 packed archive and full overlay reconstruction, R05, and corrected offline R06 arithmetic/host telemetry. No R06 firmware in candidate. All transferred bundle hashes equal on Mac mini; page and overlay HTTP 200; JavaScript syntax checks passed. Physical R07 startup and efficacy remain untested.
+- User-initiated Chrome RAM trial: http://localhost:8765/IO-LEVEL-R07-NATIVE-PEAK-QUEUE-RETENTION/ . Power-cycle to installed R03C before loading. Never flash.

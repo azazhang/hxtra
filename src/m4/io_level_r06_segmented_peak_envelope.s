@@ -254,12 +254,19 @@ io_visual_rise_live:
 io_visual_fall:
     cmp r12, r11
     bls io_visual_pack
-    sub.w r0, r12, #LED_DROOP
-    cmp r0, r11
-    it lo
-    movlo r0, r11
-    mov r12, r0
+    @ Saturate before subtraction: unsigned wrap corrupts both packed channels.
+    sub.w r0, r12, r11
+    cmp r0, #LED_DROOP
+    bls io_visual_at_live
+    sub.w r12, r12, #LED_DROOP
+    b io_visual_pack
+io_visual_at_live:
+    mov r12, r11
 io_visual_pack:
+    @ Fail closed to the intended width even if the stored envelope is invalid.
+    cmp r12, #132
+    it hi
+    movhi r12, #132
     movw r1, #0xff
     lsl.w r1, r1, r9
     bic.w r5, r5, r1
@@ -372,6 +379,10 @@ io_paint_ordinary:
 .thumb_func
 io_led_row:
     push {r4-r10, lr}
+    @ Defend the rectangle geometry independently of any producer state.
+    cmp r5, #132
+    it hi
+    movhi r5, #132
     cbz r5, io_led_row_done
     movs r0, #LED_COUNT
     mul r9, r0, r5

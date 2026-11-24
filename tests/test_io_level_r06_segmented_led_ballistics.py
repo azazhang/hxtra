@@ -182,3 +182,40 @@ def test_independent_stale_expiry_preserves_live_source_and_display_smooths_to_z
     push(m,BLANK)
     assert bins(m)==(0,114,True)
     assert m.u32(age)==4600 and m.u32(age+4)==1
+
+
+def test_low_level_decay_cannot_underflow_or_corrupt_other_channel(machine):
+    """HW05 actual failure: a low left level decaying to silence wrapped unsigned."""
+    m=machine
+    for left in range(0,15):
+        for target in range(left+1):
+            m.u32(symbol(m,'io_bar_state'),target | (25<<8) | 0x80000000)
+            m.u32(symbol(m,'io_display_state'),left | (25<<8))
+            m.u32(symbol(m,'io_peak_pending'),0)
+            m.u32(symbol(m,'io_display_holds'),0)
+            m.call(symbol(m,'io_visual_advance'))
+            assert visual(m)==(max(target,left-12),25),(left,target,visual(m))
+            assert m.u32(symbol(m,'io_display_state'))<=0x8484
+
+
+def test_visual_saturates_all_legal_levels_and_preserves_independent_channels(machine):
+    m=machine
+    for level in range(133):
+        for target in (0,1,5,11,12,25,64,100,132):
+            m.u32(symbol(m,'io_bar_state'),target | (level<<8) | 0x80000000)
+            m.u32(symbol(m,'io_display_state'),level | (target<<8))
+            m.u32(symbol(m,'io_peak_pending'),0)
+            m.u32(symbol(m,'io_display_holds'),0)
+            m.call(symbol(m,'io_visual_advance'))
+            assert visual(m)==(max(target,level-12),max(level,target-12)),(level,target,visual(m))
+
+
+def test_draw_does_not_exceed_16_leds_even_with_corrupt_255pixel_state(machine):
+    m=machine
+    for raw in (0xffff,0x0000ff,0xff00):
+        m.paint.clear()
+        m.u32(symbol(m,'io_display_state'),raw)
+        m.call(symbol(m,'io_meter_draw'),FB,0x2812a05c)
+        assert len(m.paint)<=34
+        for x in m.paint[2:]:
+            assert x[3]==7 and ((24<=x[1] and x[1]+7<=156) or (164<=x[1] and x[1]+7<=296)),x

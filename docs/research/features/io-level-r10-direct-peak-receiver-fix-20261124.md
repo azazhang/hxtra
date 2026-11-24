@@ -1,0 +1,13 @@
+# R10: direct peak receiver fix, HW08
+
+R09 physical execution verified by actual raw SPI tail captures with the custom SHARC tag. The first diagnostic trace showed the M4 rejecting valid frames after early startup. Direct raw capture identified the exact rejection: 384 armed input-meter callbacks per 64-block output window, exceeding the M4's arbitrary limit of 256. The count is diagnostic metadata; it is never used as an address, buffer size, or iteration bound. Multiple input callbacks per block are physically established; the specific graph instances producing all six calls per block are not yet individually mapped.
+
+HW08 paired 700 snapshots: discard the first stale raw snapshot; 698/699 subsequent snapshots had valid tag and XOR complement. All 698 had 384 input callbacks. Sequence rate 46.89917/s (48024.75 samples/s), maximum observed output magnitude 0.108292 (about -19.31 dBFS), maximum input magnitude 0.000040874. Cumulative DSP hot-window count above -30 dBFS advanced in 39/39 complete TAP intervals. Native output record exceeded -30 dB in 39/39 in this particular capture; host-sampled instantaneous direct peaks exceeded the threshold in 30/39, demonstrating why the cumulative counters and inter-frame peak retention matter. TAP is command-level timing; acoustic verification is separate.
+
+R10 replaces exactly six bytes at M4 0x28e623d2..d7 (the count comparison and branch with same-size NOPs) plus the one-byte diagnostic revision change IOR9 to IORA at 0x28e626f3. M4 checksum updated. All other application code/data and all 14 other archive entries are byte-identical to the physically booted R09. Frame marker and SHARC program remain identical. No unrelated feature edits.
+
+Actual captured frame-tail fixture (only header, tail, trailer and timing; no native packet payload) replays the receiver. Tests execute exact assembled Thumb code, reproduce R09 rejection, verify R10 accepts all forward-sequence checksum-valid frames, and verify rendering of a captured peak. 16 tests passed including checksum rejection and full unsigned callback-count metadata range. Raw paired trace retained locally on both machines. R10 still requires physical display verification.
+
+Candidate HXF SHA256 45f44a7e8a2ea442beff5b4776f25eb4264cdf37e67e9ec9871b0882a75b82d4; plan SHA256 cf5f3d6bb48550cd95a8e7c9ec167cfa429d092db1de650ac00852adfc13a556. All 1025 SHARC sectors verified, same five payload sectors and header as R09. Every deployed bundle file hash matched; page and plan HTTP 200. RAM-only and user-initiated.
+
+Mac mini: http://localhost:8765/IO-LEVEL-R10-DIRECT-PEAK-RECEIVER-FIX/
